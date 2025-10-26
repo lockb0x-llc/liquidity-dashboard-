@@ -1,0 +1,47 @@
+================================================================================
+🏦 FEDERAL LIQUIDITY STRESS DASHBOARD - DEMO REPORT
+================================================================================
+Report Generated: 2025-10-26 21:13:48
+Analysis Period: Last 90 days (Mock Data)
+
+📊 DATA SUMMARY
+----------------------------------------
+✅ ON RRP Records: 91
+✅ Bank Reserves Records: 91
+✅ SOFR Records: 65
+✅ SRF Records: 91
+✅ Treasury Records: 46
+
+🎯 STRESS ANALYSIS
+----------------------------------------
+⚠️  LIQUIDITY STRESS DETECTED (2 indicators)
+
+   • ON RRP: $2350.0B (above $2000B threshold)
+   • Treasury Issuance: $113.0B/week (above $50B threshold)
+
+📈 LATEST READINGS
+----------------------------------------
+ON RRP: $2350.0B (90 participants) 🔴 STRESS
+Bank Reserves: $3700.0B 🟢 NORMAL
+SOFR Rate: 5.380% (Volume: $2100.0B) 🟢 NORMAL
+SRF Usage: $0.0B 🟢 NORMAL
+Treasury Issuance: $113.0B/week 🔴 HIGH
+
+⚙️  MONITORING THRESHOLDS
+----------------------------------------
+ON RRP Stress Level: $2,000B
+Bank Reserves Low: $3,000B
+SOFR Spike Threshold: 0.25%
+SRF Emergency Usage: $50B
+Treasury High Issuance: $50B/week
+
+💡 DASHBOARD FEATURES (Full Version)
+----------------------------------------
+• Real-time data from NY Fed and Treasury APIs
+• Interactive visualizations with matplotlib/plotly
+• Historical trend analysis and volatility monitoring
+• Automated threshold alerts and stress detection
+• Comprehensive liquidity risk assessment
+• Export functionality for further analysis
+
+================================================================================
