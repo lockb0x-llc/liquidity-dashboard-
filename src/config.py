@@ -1,5 +1,15 @@
 """
 Configuration settings for the Liquidity Dashboard
+
+This module contains all configuration constants for the Fed liquidity stress monitoring system:
+
+- DATA_SOURCES: API endpoints for Federal Reserve and Treasury data
+- THRESHOLDS: Alert thresholds for stress detection across all indicators
+- DATA_FILES: File paths for local CSV data storage
+- PLOT_CONFIG: Visualization settings and styling parameters
+
+All threshold values are calibrated based on historical stress periods and 
+typical operating ranges for Federal Reserve liquidity facilities.
 """
 
 import os

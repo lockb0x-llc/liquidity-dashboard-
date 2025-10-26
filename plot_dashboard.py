@@ -14,8 +14,6 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Tuple
 import logging
-import warnings
-
 from src.config import PLOT_CONFIG, THRESHOLDS, PLOT_DIR
 from src.utils import suppress_warnings, format_billions
 
