@@ -65,8 +65,8 @@ class ONRRPFetcher:
         elif mode == "last_n":
             try:
                 n = last_n if last_n else 10
-                url_last_n = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/{n}.json"
-                logger.info(f"Attempting to fetch last {n} ON RRP operations: {url_last_n}")
+                url_last_n = f"https://markets.newyorkfed.org/api/rp/reverserepo/all/results/last/{n}.json"
+                logger.info(f"Attempting to fetch last {n} Reverse Repo operations: {url_last_n}")
                 response = requests.get(url_last_n, timeout=15, headers=headers)
                 logger.info(f"API status code: {response.status_code}")
                 logger.info(f"API raw response: {response.text}")
@@ -74,39 +74,33 @@ class ONRRPFetcher:
                 data = response.json()
                 operations = parse_response(data)
                 if operations:
-                    logger.info(f"Successfully fetched last {n} ON RRP operations.")
+                    logger.info(f"Successfully fetched last {n} Reverse Repo operations.")
                     df = pd.DataFrame(operations)
                 else:
-                    logger.warning(f"No results from last {n} ON RRP operations endpoint.")
+                    logger.warning(f"No results from last {n} Reverse Repo operations endpoint.")
             except Exception as e:
-                logger.error(f"Error fetching last {n} ON RRP operations: {e}")
+                logger.error(f"Error fetching last {n} Reverse Repo operations: {e}")
 
         elif mode == "date_range" and start_date:
             try:
-                date_list = pd.date_range(start=start_date, end=end_date or start_date, freq='D')
-                all_ops = []
-                for d in date_list:
-                    date_str = d.strftime('%Y%m%d')
-                    url_date = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/date/{date_str}.json"
-                    logger.info(f"Attempting to fetch ON RRP data for date: {url_date}")
-                    try:
-                        response = requests.get(url_date, timeout=15, headers=headers)
-                        logger.info(f"API status code: {response.status_code}")
-                        logger.info(f"API raw response: {response.text}")
-                        response.raise_for_status()
-                        data = response.json()
-                        ops = parse_response(data)
-                        if ops:
-                            all_ops.extend(ops)
-                    except Exception as e:
-                        logger.error(f"Error fetching ON RRP data for {date_str}: {e}")
-                if all_ops:
-                    logger.info(f"Successfully fetched ON RRP data for date range.")
-                    df = pd.DataFrame(all_ops)
+                # NY Fed API expects startDate and endDate in YYYY-MM-DD format
+                start_str = start_date.strftime('%Y-%m-%d')
+                end_str = (end_date or start_date).strftime('%Y-%m-%d')
+                url_date_range = f"https://markets.newyorkfed.org/api/rp/reverserepo/all/results/search.json?startDate={start_str}&endDate={end_str}&format=json"
+                logger.info(f"Attempting to fetch Reverse Repo data for date range: {url_date_range}")
+                response = requests.get(url_date_range, timeout=15, headers=headers)
+                logger.info(f"API status code: {response.status_code}")
+                logger.info(f"API raw response: {response.text}")
+                response.raise_for_status()
+                data = response.json()
+                operations = parse_response(data)
+                if operations:
+                    logger.info(f"Successfully fetched Reverse Repo data for date range.")
+                    df = pd.DataFrame(operations)
                 else:
-                    logger.warning("No results from ON RRP date range endpoint.")
+                    logger.warning("No results from Reverse Repo date range endpoint.")
             except Exception as e:
-                logger.error(f"Error fetching ON RRP data for range: {e}")
+                logger.error(f"Error fetching Reverse Repo data for range: {e}")
 
         # Mark data source as live only
         if not df.empty:

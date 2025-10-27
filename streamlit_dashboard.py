@@ -1,6 +1,7 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import os
 from src.fetch_onrrp import ONRRPFetcher
 from src.fetch_reserves import ReservesFetcher
