@@ -1,10 +1,27 @@
+import pandas as pd
+import requests
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
+import logging
+
+from bs4 import BeautifulSoup
+
+from .config import DATA_SOURCES, DATA_FILES, THRESHOLDS
+from .utils import safe_request, save_data, load_data, format_date, suppress_warnings
+
 """
 Fetch Overnight Reverse Repo (ON RRP) data from NY Fed
 """
 
-import pandas as pd
-import requests
-from datetime import datetime, timedelta
+def fetch_onrrp_data(mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
+    """
+    Convenience function to fetch ON RRP data using ONRRPFetcher.
+    """
+    fetcher = ONRRPFetcher()
+    return fetcher.fetch_data(mode=mode, start_date=start_date, end_date=end_date, last_n=last_n)
+"""
+Fetch Overnight Reverse Repo (ON RRP) data from NY Fed
+"""
 from typing import Optional, Dict, Any
 import logging
 
