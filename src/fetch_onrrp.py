@@ -5,7 +5,7 @@ Fetch Overnight Reverse Repo (ON RRP) data from NY Fed
 import pandas as pd
 import requests
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any
 import logging
 
 from .config import DATA_SOURCES, DATA_FILES, THRESHOLDS
