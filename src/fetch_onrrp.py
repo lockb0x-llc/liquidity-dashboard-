@@ -23,7 +23,7 @@ class ONRRPFetcher:
         self.data_file = DATA_FILES['onrrp']
         suppress_warnings()
     
-    def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
+    def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None, operation_type: str = "Reverse Repo") -> Optional[pd.DataFrame]:
         """
         Fetch ON RRP data from NY Fed API only. No mock or fallback data.
         Uses the correct endpoint for latest Reverse Repo operation results.
@@ -83,11 +83,17 @@ class ONRRPFetcher:
 
         elif mode == "date_range" and start_date:
             try:
-                # NY Fed API expects startDate and endDate in YYYY-MM-DD format
                 start_str = start_date.strftime('%Y-%m-%d')
                 end_str = (end_date or start_date).strftime('%Y-%m-%d')
-                url_date_range = f"https://markets.newyorkfed.org/api/rp/reverserepo/all/results/search.json?startDate={start_str}&endDate={end_str}&format=json"
-                logger.info(f"Attempting to fetch Reverse Repo data for date range: {url_date_range}")
+                # Use NY Fed API for date range queries
+                # operation_type can be "Repo" or "Reverse Repo"
+                op_type_param = requests.utils.quote(operation_type)
+                url_date_range = (
+                    f"https://markets.newyorkfed.org/api/rp/results/search.json?"
+                    f"startDate={start_str}&endDate={end_str}"
+                    f"&operationTypes={op_type_param}&method=multiple"
+                )
+                logger.info(f"Attempting to fetch {operation_type} data for date range: {url_date_range}")
                 response = requests.get(url_date_range, timeout=15, headers=headers)
                 logger.info(f"API status code: {response.status_code}")
                 logger.info(f"API raw response: {response.text}")
@@ -95,17 +101,25 @@ class ONRRPFetcher:
                 data = response.json()
                 operations = parse_response(data)
                 if operations:
-                    logger.info(f"Successfully fetched Reverse Repo data for date range.")
+                    logger.info(f"Successfully fetched {operation_type} data for date range.")
                     df = pd.DataFrame(operations)
                 else:
-                    logger.warning("No results from Reverse Repo date range endpoint.")
+                    logger.warning(f"No results from {operation_type} date range endpoint.")
             except Exception as e:
-                logger.error(f"Error fetching Reverse Repo data for range: {e}")
+                logger.error(f"Error fetching {operation_type} data for range: {e}")
 
-        # Mark data source as live only
+        # Map correct NY Fed API fields to dashboard columns
         if not df.empty:
+            # Extract and transform fields
+            df["Date"] = pd.to_datetime(df["operationDate"]) if "operationDate" in df.columns else pd.NaT
+            df["Accepted_Billions"] = df["totalAmtAccepted"].astype(float) / 1e9 if "totalAmtAccepted" in df.columns else pd.NA
+            df["Counterparties"] = df["acceptedCpty"] if "acceptedCpty" in df.columns else pd.NA
+            df["Rate"] = df["rate"].astype(float) if "rate" in df.columns else pd.NA
+            df["Operation_Type"] = df["operationType"] if "operationType" in df.columns else pd.NA
             df["_data_source"] = "live"
         else:
+            # Create empty DataFrame with required columns
+            df = pd.DataFrame(columns=["Date", "Accepted_Billions", "Counterparties", "Rate", "Operation_Type", "_data_source"])
             df["_data_source"] = "live_empty"
         return df
     

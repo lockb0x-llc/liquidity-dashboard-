@@ -25,32 +25,6 @@ A comprehensive modular Python application that tracks and visualizes systemic l
 - 💹 **Volatility monitoring** and anomaly detection
 - 📋 **Export functionality** for further analysis
 
-## 🚀 Quick Start
-
-### Basic Usage
-```bash
-# Run full dashboard analysis
-python3 dashboard.py
-
-# Run with custom date range
-python3 dashboard.py --start-date 2024-01-01 --end-date 2024-12-31
-
-# Run specific module only
-python3 dashboard.py --module onrrp
-
-# Force data refresh
-python3 dashboard.py --force-refresh
-
-# Skip visualizations
-python3 dashboard.py --no-plots
-```
-
-### Demo Version
-```bash
-# Run simplified demo with mock data (no dependencies required)
-python3 test_dashboard.py
-```
-
 ## 📁 Project Structure
 
 ```
@@ -60,11 +34,6 @@ liquidity-dashboard/
 ├── test_dashboard.py      # Simplified demo version
 ├── requirements.txt       # Python dependencies
 ├── data/                  # CSV data storage
-│   ├── onrrp_data.csv
-│   ├── reserves_data.csv
-│   ├── sofr_data.csv
-│   ├── srf_data.csv
-│   └── treasury_data.csv
 └── src/                   # Core modules
     ├── __init__.py
     ├── config.py          # Configuration and thresholds
@@ -81,10 +50,47 @@ liquidity-dashboard/
 - **NY Fed Markets**: ON RRP, SOFR, SRF data
 - **Federal Reserve H.4.1**: Bank reserves and monetary base
 - **Treasury.gov API**: Auction results and issuance data
-- **Real-time APIs** with fallback to mock data for testing
 
-## ⚙️ Configuration
 
+## 🚀 Running Locally
+
+```bash
+git clone <your-repo-url>
+cd liquidity-dashboard-
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+streamlit run streamlit_dashboard.py
+```
+
+## ☁️ Deploying to Azure Web Apps (App Service)
+
+You can deploy this dashboard to Azure Web Apps using VS Code and the Azure Tools extension pack:
+
+1. **Install Azure Tools Extension Pack** in VS Code.
+2. **Sign in to Azure** in VS Code.
+3. **Open your project folder** in VS Code.
+4. Open the Command Palette (`Cmd+Shift+P`), run `Azure: Create Web App`, and follow prompts:
+    - Select your subscription
+    - Choose a unique app name
+    - Select Python 3.x runtime
+    - Choose your region
+5. When prompted, select your project folder for deployment.
+6. In the Azure portal or VS Code, set the startup command:
+    ```
+    streamlit run streamlit_dashboard.py --server.port 8000 --server.address 0.0.0.0
+    ```
+    (Set this in the "Startup Command" field under "Configuration" in the Azure portal.)
+7. Ensure your `requirements.txt` is present and up to date.
+8. Deploy using `Azure: Deploy to Web App` in VS Code.
+9. Access your dashboard via the provided Azure URL.
+
+**Troubleshooting:**
+- If you see a blank page, check the Azure Web App logs for errors.
+- Make sure the port and address are set as above.
+- Ensure all dependencies are listed in `requirements.txt`.
+
+---
 ### Default Stress Thresholds
 - **ON RRP Stress Level**: $2,000B (indicates high money market stress)
 - **Bank Reserves Low**: $3,000B (indicates potential liquidity constraints) 
