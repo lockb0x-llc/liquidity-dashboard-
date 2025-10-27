@@ -267,24 +267,31 @@ with st.container():
             )
 
     # Data source indicator
-    st.write(f"Data Source: :globe_with_meridians: NY Fed API")
+    # --- Enhanced ON RRP Data Source Messaging ---
+    data_source = None
+    if onrrp_df is not None and "_data_source" in onrrp_df.columns:
+        data_source = onrrp_df["_data_source"].iloc[0]
+
+    if data_source == "mock":
+        st.error("ON RRP data is from demo/mock source. The NY Fed API was unreachable or returned an error. Please check your network or API status.")
+    elif data_source == "live_empty":
+        st.warning("ON RRP data is empty. The NY Fed API returned no results for the selected parameters. There may be no recent ON RRP operations.")
+    elif data_source == "live":
+        st.success("ON RRP data is live from the NY Fed API.")
+    else:
+        st.info("ON RRP data source unknown or legacy. Please verify data integrity.")
 
     # Display ON RRP data
     if onrrp_df is not None and not onrrp_df.empty:
-        # Debug output: show DataFrame columns and shape
         st.write(f"ON RRP DataFrame shape: {onrrp_df.shape}")
         st.write(f"ON RRP DataFrame columns: {list(onrrp_df.columns)}")
-        # NY Fed ON RRP API columns: operation_date, accepted_amount, counterparties, note, etc.
-        # Rename for dashboard consistency
         rename_map = {
             "operation_date": "Date",
             "accepted_amount": "Accepted_Billions",
             "counterparties": "Counterparties"
         }
-        # Only rename if columns exist
         onrrp_df = onrrp_df.rename(columns={k: v for k, v in rename_map.items() if k in onrrp_df.columns})
 
-        # Ensure required columns exist for charting
         if "Date" in onrrp_df.columns and "Accepted_Billions" in onrrp_df.columns:
             st.dataframe(onrrp_df)
             st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
@@ -325,7 +332,6 @@ with st.container():
             st.markdown(f"Date: {date_str}  ")
             st.markdown(f"Accepted Amount: {accepted_str}  ")
             st.markdown(f"Counterparties: {counterparties_str}")
-            # Export option
             csv = onrrp_df.to_csv(index=False).encode()
             st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
         else:
