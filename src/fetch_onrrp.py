@@ -144,30 +144,23 @@ class ONRRPFetcher:
     def load_data(self) -> Optional[pd.DataFrame]:
         """Load ON RRP data from CSV"""
         return load_data(self.data_file)
-    
+
     def check_stress_level(self, df: pd.DataFrame) -> Dict[str, Any]:
         """Check ON RRP stress indicators"""
         if df.empty:
             return {'stress_detected': False, 'message': 'No data available'}
-        
+
         latest_amount = df['amount_billions'].iloc[-1]
         stress_threshold = THRESHOLDS['onrrp_stress']
-        
+
         is_stress = latest_amount > stress_threshold
-        
+
         return {
             'stress_detected': is_stress,
             'latest_amount': latest_amount,
             'threshold': stress_threshold,
             'message': f"ON RRP at ${latest_amount:.1f}B ({'ABOVE' if is_stress else 'below'} stress threshold of ${stress_threshold}B)"
         }
-
-def fetch_onrrp_data(start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Optional[pd.DataFrame]:
-    """Convenience function to fetch ON RRP data"""
-    if start_date is None:
-        start_date = datetime.now() - timedelta(days=365)
-    if end_date is None:
-        end_date = datetime.now()
     
     fetcher = ONRRPFetcher()
     df = fetcher.fetch_data(start_date, end_date)
