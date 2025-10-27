@@ -26,6 +26,7 @@ class ONRRPFetcher:
     def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
         """
         Fetch ON RRP data from NY Fed API only. No mock or fallback data.
+        Uses the correct endpoint for latest Reverse Repo operation results.
         """
         def parse_response(data):
             if isinstance(data, dict) and "repo" in data and "operations" in data["repo"]:
@@ -45,8 +46,8 @@ class ONRRPFetcher:
         }
         if mode == "latest":
             try:
-                url_latest = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
-                logger.info(f"Attempting to fetch latest ON RRP operation: {url_latest}")
+                url_latest = "https://markets.newyorkfed.org/api/rp/reverserepo/all/results/latest.json"
+                logger.info(f"Attempting to fetch latest Reverse Repo operation: {url_latest}")
                 response = requests.get(url_latest, timeout=15, headers=headers)
                 logger.info(f"API status code: {response.status_code}")
                 logger.info(f"API raw response: {response.text}")
@@ -54,12 +55,12 @@ class ONRRPFetcher:
                 data = response.json()
                 operations = parse_response(data)
                 if operations:
-                    logger.info("Successfully fetched latest ON RRP operation.")
+                    logger.info("Successfully fetched latest Reverse Repo operation.")
                     df = pd.DataFrame(operations)
                 else:
-                    logger.warning("No results from latest ON RRP operation endpoint.")
+                    logger.warning("No results from latest Reverse Repo operation endpoint.")
             except Exception as e:
-                logger.error(f"Error fetching latest ON RRP operation: {e}")
+                logger.error(f"Error fetching latest Reverse Repo operation: {e}")
 
         elif mode == "last_n":
             try:
