@@ -270,12 +270,17 @@ with st.container():
     # Only show live or live_empty data source messages
     data_source = None
     if onrrp_df is not None and "_data_source" in onrrp_df.columns:
-        data_source = onrrp_df["_data_source"].iloc[0]
+        if not onrrp_df.empty:
+            data_source = onrrp_df["_data_source"].iloc[0]
+        else:
+            data_source = None
 
     if data_source == "live_empty":
         st.warning("ON RRP data is empty. The NY Fed API returned no results for the selected parameters. There may be no recent ON RRP operations.")
     elif data_source == "live":
         st.success("ON RRP data is live from the NY Fed API.")
+    elif onrrp_df is not None and onrrp_df.empty:
+        st.warning("ON RRP data is empty. No results returned from the API.")
     else:
         st.info("ON RRP data source unknown. Please verify data integrity.")
 
