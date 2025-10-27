@@ -271,50 +271,65 @@ with st.container():
 
     # Display ON RRP data
     if onrrp_df is not None and not onrrp_df.empty:
-        st.dataframe(onrrp_df)
-        st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
+        # Debug output: show DataFrame columns and shape
+        st.write(f"ON RRP DataFrame shape: {onrrp_df.shape}")
+        st.write(f"ON RRP DataFrame columns: {list(onrrp_df.columns)}")
+        # NY Fed ON RRP API columns: operation_date, accepted_amount, counterparties, note, etc.
+        # Rename for dashboard consistency
+        rename_map = {
+            "operation_date": "Date",
+            "accepted_amount": "Accepted_Billions",
+            "counterparties": "Counterparties"
+        }
+        # Only rename if columns exist
+        onrrp_df = onrrp_df.rename(columns={k: v for k, v in rename_map.items() if k in onrrp_df.columns})
 
-        # Enhanced ON RRP chart with tooltip showing note, date, and Accepted Billions
-        import altair as alt
-        import numpy as np
+        # Ensure required columns exist for charting
+        if "Date" in onrrp_df.columns and "Accepted_Billions" in onrrp_df.columns:
+            st.dataframe(onrrp_df)
+            st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
 
-        onrrp_chart_df = onrrp_df.copy()
-        onrrp_chart_df["Accepted_Billions"] = pd.to_numeric(onrrp_chart_df["Accepted_Billions"], errors="coerce")
-        onrrp_chart_df["Date"] = pd.to_datetime(onrrp_chart_df["Date"])
+            import altair as alt
+            import numpy as np
+            onrrp_chart_df = onrrp_df.copy()
+            onrrp_chart_df["Accepted_Billions"] = pd.to_numeric(onrrp_chart_df["Accepted_Billions"], errors="coerce")
+            onrrp_chart_df["Date"] = pd.to_datetime(onrrp_chart_df["Date"])
+            tooltip_fields = [
+                alt.Tooltip("Date:T", title="Date"),
+                alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
+                alt.Tooltip("note:N", title="Note")
+            ]
+            chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
+                x=alt.X("Date:T", title="Date"),
+                y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
+                tooltip=tooltip_fields
+            ).properties(
+                title="ON RRP Accepted Amounts"
+            )
+            st.altair_chart(chart, use_container_width=True)
 
-        tooltip_fields = [
-            alt.Tooltip("Date:T", title="Date"),
-            alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
-            alt.Tooltip("note:N", title="Note")
-        ]
-
-        chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
-            x=alt.X("Date:T", title="Date"),
-            y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
-            tooltip=tooltip_fields
-        ).properties(
-            title="ON RRP Accepted Amounts"
-        )
-
-        st.altair_chart(chart, use_container_width=True)
-
-        # Latest operation summary (unchanged)
-        latest_row = onrrp_df.iloc[-1]
-        date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
-        accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
-        counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
-        if pd.isna(accepted):
-            accepted_str = "N/A"
+            # Latest operation summary
+            latest_row = onrrp_df.iloc[-1]
+            date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
+            accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
+            counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
+            if pd.isna(accepted):
+                accepted_str = "N/A"
+            else:
+                accepted_str = f"${accepted:.2f}B"
+            if pd.isna(counterparties):
+                counterparties_str = "N/A"
+            else:
+                counterparties_str = str(counterparties)
+            st.markdown(f"**Latest ON RRP Operation:**  ")
+            st.markdown(f"Date: {date_str}  ")
+            st.markdown(f"Accepted Amount: {accepted_str}  ")
+            st.markdown(f"Counterparties: {counterparties_str}")
+            # Export option
+            csv = onrrp_df.to_csv(index=False).encode()
+            st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
         else:
-            accepted_str = f"${accepted:.2f}B"
-        if pd.isna(counterparties):
-            counterparties_str = "N/A"
-        else:
-            counterparties_str = f"{int(counterparties)}"
-        st.write(f"Latest operation: {date_str} | Accepted: {accepted_str} | Counterparties: {counterparties_str}")
-        # Export option
-        csv = onrrp_df.to_csv(index=False).encode()
-        st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
+            st.warning("ON RRP data is missing required columns for visualization. Please check the data source or API response.")
     else:
         st.warning("ON RRP data not available or no results for selected parameters.")
 

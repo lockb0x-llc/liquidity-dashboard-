@@ -26,17 +26,13 @@ class ONRRPFetcher:
     def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
         """
         Robustly fetch ON RRP data from NY Fed API.
-        Tries latest, then last N, then date range if no results. Documents all steps.
-
-        Parameters:
-            mode: "latest", "last_n", "date_range"
-            start_date, end_date: for custom range
-            last_n: for last N operations
-
-        Returns:
-            pd.DataFrame or None
+        Uses only documented endpoints:
+        - latest: /operation-results/results/last/1.json
+        - last_n: /operation-results/results/last/{N}.json
+        - date: /operation-results/results/date/{YYYYMMDD}.json
         """
         def parse_response(data):
+            # NY Fed ON RRP API returns a list of dicts (operations)
             if isinstance(data, dict) and "repo" in data and "operations" in data["repo"]:
                 return data["repo"]["operations"]
             elif isinstance(data, dict) and "operations" in data:
@@ -47,26 +43,26 @@ class ONRRPFetcher:
                 logger.error("Unexpected ON RRP API response structure.")
                 return []
 
+        df = pd.DataFrame()
         # 1. Try latest operation
-        try:
-            url_latest = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
-            logger.info(f"Attempting to fetch latest ON RRP operation: {url_latest}")
-            response = requests.get(url_latest, timeout=15)
-            response.raise_for_status()
-            data = response.json()
-            operations = parse_response(data)
-            if operations:
-                logger.info("Successfully fetched latest ON RRP operation.")
-                df = pd.DataFrame(operations)
-            else:
-                logger.warning("No results from latest ON RRP operation endpoint.")
-                df = pd.DataFrame()
-        except Exception as e:
-            logger.error(f"Error fetching latest ON RRP operation: {e}")
-            df = pd.DataFrame()
+        if mode == "latest":
+            try:
+                url_latest = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
+                logger.info(f"Attempting to fetch latest ON RRP operation: {url_latest}")
+                response = requests.get(url_latest, timeout=15)
+                response.raise_for_status()
+                data = response.json()
+                operations = parse_response(data)
+                if operations:
+                    logger.info("Successfully fetched latest ON RRP operation.")
+                    df = pd.DataFrame(operations)
+                else:
+                    logger.warning("No results from latest ON RRP operation endpoint.")
+            except Exception as e:
+                logger.error(f"Error fetching latest ON RRP operation: {e}")
 
-        # 2. If empty, try last N operations (default N=10)
-        if df.empty:
+        # 2. Try last N operations
+        elif mode == "last_n":
             try:
                 n = last_n if last_n else 10
                 url_last_n = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/{n}.json"
@@ -80,84 +76,41 @@ class ONRRPFetcher:
                     df = pd.DataFrame(operations)
                 else:
                     logger.warning(f"No results from last {n} ON RRP operations endpoint.")
-                    df = pd.DataFrame()
             except Exception as e:
                 logger.error(f"Error fetching last {n} ON RRP operations: {e}")
-                df = pd.DataFrame()
 
-        # 3. If still empty, try date range (default: last 90 days)
-        if df.empty:
-
-            import requests
-            import pandas as pd
-            import logging
-            from datetime import datetime, timedelta
-
-            logger = logging.getLogger(__name__)
-
-            class ONRRPFetcher:
-                """
-                Fetches ON RRP (Overnight Reverse Repo) data from the NY Fed API.
-                Provides robust fallback logic for missing fields and handles errors gracefully.
-                """
-                BASE_URL = "https://markets.newyorkfed.org/api/rp/overnightreverse/search.json"
-
-                @staticmethod
-                def fetch_data(mode="live", start_date=None, end_date=None, last_n=30):
-                    """
-                    Fetch ON RRP data from NY Fed API or demo file.
-                    Args:
-                        mode (str): 'live' or 'demo'.
-                        start_date (str): 'YYYY-MM-DD'.
-                        end_date (str): 'YYYY-MM-DD'.
-                        last_n (int): Number of most recent records if no date range provided.
-                    Returns:
-                        pd.DataFrame or None: ON RRP data, or None if unavailable.
-                    """
-                    if mode == "demo":
-                        try:
-                            return pd.read_csv("data/onrrp_sample.csv")
-                        except Exception as e:
-                            logger.error(f"Demo ON RRP data not available: {e}")
-                            return None
-
-                    params = {"format": "json"}
-                    if start_date and end_date:
-                        params["startDate"] = start_date
-                        params["endDate"] = end_date
-                    else:
-                        today = datetime.today()
-                        params["startDate"] = (today - timedelta(days=60)).strftime("%Y-%m-%d")
-                        params["endDate"] = today.strftime("%Y-%m-%d")
-
+        # 3. Try specific date (if provided)
+        elif mode == "date_range" and start_date:
+            try:
+                # NY Fed only supports single date queries, so fetch each date in range and concatenate
+                date_list = pd.date_range(start=start_date, end=end_date or start_date, freq='D')
+                all_ops = []
+                for d in date_list:
+                    date_str = d.strftime('%Y%m%d')
+                    url_date = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/date/{date_str}.json"
+                    logger.info(f"Attempting to fetch ON RRP data for date: {url_date}")
                     try:
-                        response = requests.get(ONRRPFetcher.BASE_URL, params=params, timeout=10)
+                        response = requests.get(url_date, timeout=15)
                         response.raise_for_status()
                         data = response.json()
-                        records = data.get("repoOperations", [])
-                        if not records:
-                            logger.warning("No ON RRP records found in API response.")
-                            return None
-                        df = pd.DataFrame(records)
+                        ops = parse_response(data)
+                        if ops:
+                            all_ops.extend(ops)
                     except Exception as e:
-                        logger.error(f"ON RRP API fetch failed: {e}")
-                        return None
+                        logger.error(f"Error fetching ON RRP data for {date_str}: {e}")
+                if all_ops:
+                    logger.info(f"Successfully fetched ON RRP data for date range.")
+                    df = pd.DataFrame(all_ops)
+                else:
+                    logger.warning("No results from ON RRP date range endpoint.")
+            except Exception as e:
+                logger.error(f"Error fetching ON RRP data for range: {e}")
 
-                    # Ensure required columns
-                    for col in ["operationDate", "acceptedAmount", "note"]:
-                        if col not in df.columns:
-                            df[col] = pd.NA
-
-                    # Convert acceptedAmount to float (billions)
-                    df["acceptedAmount"] = pd.to_numeric(df["acceptedAmount"], errors="coerce") / 1e9
-                    # Parse operationDate to datetime
-                    df["operationDate"] = pd.to_datetime(df["operationDate"], errors="coerce")
-
-                    # Sort and trim
-                    df = df.sort_values("operationDate", ascending=False)
-                    if last_n:
-                        df = df.head(last_n)
-                    return df.reset_index(drop=True)
+        # 4. If still empty, fallback to mock/demo data
+        if df.empty:
+            logger.warning("ON RRP data unavailable, using mock/demo data.")
+            df = self._generate_mock_data(datetime.today() - timedelta(days=30), datetime.today())
+        return df
     
     def _generate_mock_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         """Generate mock ON RRP data for testing"""
