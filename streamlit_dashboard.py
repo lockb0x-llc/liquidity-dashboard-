@@ -1,6 +1,7 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import os
 from src.fetch_onrrp import ONRRPFetcher
 from src.fetch_reserves import ReservesFetcher
@@ -243,80 +244,135 @@ with st.container():
         **ON RRP** (Overnight Reverse Repo) operations are conducted by the NY Fed to manage short-term liquidity. Data includes operation date, total accepted amount (billions), and number of counterparties.
     """)
 
-    # User controls for ON RRP data selection
+    # User controls for ON/RRP operation type and data selection
+    op_types = ["Repo", "Reverse Repo"]
+    selected_op_types = st.multiselect(
+        "Select Operation Type(s):",
+        op_types,
+        default=["Reverse Repo"]
+    )
     onrrp_mode = st.radio(
         "Select data mode:",
         ["Latest", "Last N Operations", "Date Range"],
         horizontal=True
     )
     fetcher = ONRRPFetcher()
-    onrrp_df = None
-    if onrrp_mode == "Latest":
-        onrrp_df = fetcher.fetch_data(mode="latest")
-    elif onrrp_mode == "Last N Operations":
-        last_n = st.number_input("Number of operations:", min_value=1, max_value=60, value=7)
-        onrrp_df = fetcher.fetch_data(mode="last_n", last_n=last_n)
-    elif onrrp_mode == "Date Range":
-        start_date = st.date_input("Start date:")
-        end_date = st.date_input("End date:")
-        if start_date and end_date:
-            onrrp_df = fetcher.fetch_data(
-                mode="date_range",
-                start_date=pd.to_datetime(start_date),
-                end_date=pd.to_datetime(end_date)
-            )
+    onrrp_df_list = []
+    for op_type in selected_op_types:
+        if onrrp_mode == "Latest":
+            df = fetcher.fetch_data(mode="latest", operation_type=op_type)
+        elif onrrp_mode == "Last N Operations":
+            last_n = st.number_input("Number of operations:", min_value=1, max_value=60, value=7, key=f"last_n_{op_type}")
+            df = fetcher.fetch_data(mode="last_n", last_n=last_n, operation_type=op_type)
+        elif onrrp_mode == "Date Range":
+            start_date = st.date_input("Start date:", key=f"start_{op_type}")
+            end_date = st.date_input("End date:", key=f"end_{op_type}")
+            if start_date and end_date:
+                df = fetcher.fetch_data(
+                    mode="date_range",
+                    start_date=pd.to_datetime(start_date),
+                    end_date=pd.to_datetime(end_date),
+                    operation_type=op_type
+                )
+            else:
+                df = None
+        else:
+            df = None
+        if df is not None and not df.empty:
+            df["Operation_Type"] = op_type
+            onrrp_df_list.append(df)
+    if onrrp_df_list:
+        onrrp_df = pd.concat(onrrp_df_list, ignore_index=True)
+    else:
+        onrrp_df = pd.DataFrame()
 
     # Data source indicator
-    st.write(f"Data Source: :globe_with_meridians: NY Fed API")
+    if onrrp_df is not None and "_data_source" in onrrp_df.columns:
+        sources = onrrp_df["_data_source"].unique().tolist()
+        if "live_empty" in sources:
+            st.warning("ON/RRP data is empty. The NY Fed API returned no results for the selected parameters.")
+        elif "live" in sources:
+            st.success("ON/RRP data is live from the NY Fed API.")
+        else:
+            st.info("ON/RRP data source unknown. Please verify data integrity.")
+    elif onrrp_df is not None and onrrp_df.empty:
+        st.warning("ON/RRP data is empty. No results returned from the API.")
+    else:
+        st.info("ON/RRP data source unknown. Please verify data integrity.")
 
-    # Display ON RRP data
+    # Display ON/RRP data
     if onrrp_df is not None and not onrrp_df.empty:
+        # Standardize columns to match NY Fed API
+        rename_map = {
+            "operation_date": "Date",
+            "accepted_amount": "Accepted_Billions",
+            "counterparties": "Counterparties",
+            "rate": "Rate",
+            "operation_type": "Operation_Type"
+        }
+        onrrp_df = onrrp_df.rename(columns={k: v for k, v in rename_map.items() if k in onrrp_df.columns})
+
+        st.write(f"ON/RRP DataFrame shape: {onrrp_df.shape}")
+        st.write(f"ON/RRP DataFrame columns: {list(onrrp_df.columns)}")
+
+        # Show table
         st.dataframe(onrrp_df)
-        st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
 
-        # Enhanced ON RRP chart with tooltip showing note, date, and Accepted Billions
-        import altair as alt
-        import numpy as np
+        # Plot Accepted_Billions by Operation_Type
+        if "Date" in onrrp_df.columns and "Accepted_Billions" in onrrp_df.columns and "Operation_Type" in onrrp_df.columns:
+            import altair as alt
+            import numpy as np
+            onrrp_chart_df = onrrp_df.copy()
+            onrrp_chart_df["Accepted_Billions"] = pd.to_numeric(onrrp_chart_df["Accepted_Billions"], errors="coerce")
+            onrrp_chart_df["Date"] = pd.to_datetime(onrrp_chart_df["Date"])
+            tooltip_fields = [
+                alt.Tooltip("Date:T", title="Date"),
+                alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
+                alt.Tooltip("Counterparties:N", title="Counterparties"),
+                alt.Tooltip("Rate:Q", title="Rate", format=".2f"),
+                alt.Tooltip("Operation_Type:N", title="Operation Type")
+            ]
+            chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
+                x=alt.X("Date:T", title="Date"),
+                y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
+                color=alt.Color("Operation_Type:N", title="Operation Type"),
+                tooltip=tooltip_fields
+            ).properties(
+                title="ON/RRP Accepted Amounts by Operation Type"
+            )
+            st.altair_chart(chart, use_container_width=True)
 
-        onrrp_chart_df = onrrp_df.copy()
-        onrrp_chart_df["Accepted_Billions"] = pd.to_numeric(onrrp_chart_df["Accepted_Billions"], errors="coerce")
-        onrrp_chart_df["Date"] = pd.to_datetime(onrrp_chart_df["Date"])
+        # Plot Rate if present
+        if "Date" in onrrp_df.columns and "Rate" in onrrp_df.columns:
+            st.line_chart(onrrp_df.set_index("Date")["Rate"])
 
-        tooltip_fields = [
-            alt.Tooltip("Date:T", title="Date"),
-            alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
-            alt.Tooltip("note:N", title="Note")
-        ]
-
-        chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
-            x=alt.X("Date:T", title="Date"),
-            y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
-            tooltip=tooltip_fields
-        ).properties(
-            title="ON RRP Accepted Amounts"
-        )
-
-        st.altair_chart(chart, use_container_width=True)
-
-        # Latest operation summary (unchanged)
-        latest_row = onrrp_df.iloc[-1]
-        date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
-        accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
-        counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
-        if pd.isna(accepted):
-            accepted_str = "N/A"
+        # Latest operation summary
+        required_cols = ["Date", "Accepted_Billions", "Counterparties", "Rate", "Operation_Type"]
+        missing_cols = [col for col in required_cols if col not in onrrp_df.columns]
+        if not missing_cols:
+            latest_row = onrrp_df.iloc[-1]
+            date_str = latest_row["Date"].date() if pd.notna(latest_row["Date"]) else "N/A"
+            accepted = latest_row["Accepted_Billions"]
+            counterparties = latest_row["Counterparties"]
+            rate = latest_row["Rate"]
+            op_type = latest_row["Operation_Type"]
+            accepted_str = f"${accepted:.2f}B" if not pd.isna(accepted) else "N/A"
+            counterparties_str = str(counterparties) if not pd.isna(counterparties) else "N/A"
+            rate_str = f"{rate:.2f}" if rate is not None else "N/A"
+            st.markdown(f"**Latest ON/RRP Operation:**  ")
+            st.markdown(f"Date: {date_str}  ")
+            st.markdown(f"Accepted Amount: {accepted_str}  ")
+            st.markdown(f"Counterparties: {counterparties_str}  ")
+            st.markdown(f"Rate: {rate_str}  ")
+            st.markdown(f"Operation Type: {op_type}")
         else:
-            accepted_str = f"${accepted:.2f}B"
-        if pd.isna(counterparties):
-            counterparties_str = "N/A"
-        else:
-            counterparties_str = f"{int(counterparties)}"
-        st.write(f"Latest operation: {date_str} | Accepted: {accepted_str} | Counterparties: {counterparties_str}")
-        # Export option
+            st.warning(f"Latest ON/RRP Operation: Data missing columns: {', '.join(missing_cols)}. Check API response and field mapping.")
+
         csv = onrrp_df.to_csv(index=False).encode()
         st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
     else:
-        st.warning("ON RRP data not available or no results for selected parameters.")
+        st.warning("ON/RRP data not available or no results for selected parameters. Raw DataFrame:")
+        st.write(onrrp_df)
 
 
 

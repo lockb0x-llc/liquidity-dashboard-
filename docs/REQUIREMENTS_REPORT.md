@@ -64,7 +64,7 @@ This report compares the current state of the Liquidity Stress Dashboard applica
 3. **Export Options**: Enable export of visualizations and data for further analysis.
 4. **Historical Analysis**: Add date range selectors and filtering to support custom/historical analysis.
 5. **Multi-indicator Summary**: Provide a summary panel/report for stress detection across all indicators.
-6. **Demo Mode Toggle**: Allow users to switch between live and demo/test data in the Streamlit dashboard.
+6. 
 7. **Documentation Update**: Revise README.md and AGENTS.md to reflect Streamlit usage, new UI features, and emoji legend.
 
 ---
@@ -76,7 +76,6 @@ This report compares the current state of the Liquidity Stress Dashboard applica
 - [ ] Add export functionality to dashboard
 - [ ] Add date range selectors for historical analysis
 - [ ] Integrate multi-indicator stress summary/report
-- [ ] Add demo mode toggle to Streamlit dashboard
 - [ ] Update documentation for Streamlit usage and emoji legend
 
 ---
