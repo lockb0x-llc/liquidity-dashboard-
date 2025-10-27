@@ -26,18 +26,33 @@ srf_df = pd.read_csv(os.path.join(data_dir, "srf_data.csv"))
 treasury_df = pd.read_csv(os.path.join(data_dir, "treasury_data.csv"))
 
 st.header("ON RRP Data")
-st.line_chart(onrrp_df.set_index("date")["amount_b"])
+if "date" in onrrp_df.columns:
+	onrrp_df = onrrp_df.set_index("date")
+selected_onrrp_col = st.selectbox("Select ON RRP column to plot", [col for col in onrrp_df.columns])
+st.line_chart(onrrp_df[selected_onrrp_col])
 
 st.header("Bank Reserves Data")
-st.line_chart(reserves_df.set_index("date")["reserves_b"])
+if "date" in reserves_df.columns:
+	reserves_df = reserves_df.set_index("date")
+selected_reserves_col = st.selectbox("Select Reserves column to plot", [col for col in reserves_df.columns])
+st.line_chart(reserves_df[selected_reserves_col])
 
 st.header("SOFR Data")
-st.line_chart(sofr_df.set_index("date")["sofr"])
+if "date" in sofr_df.columns:
+	sofr_df = sofr_df.set_index("date")
+selected_sofr_col = st.selectbox("Select SOFR column to plot", [col for col in sofr_df.columns])
+st.line_chart(sofr_df[selected_sofr_col])
 
 st.header("SRF Data")
-st.line_chart(srf_df.set_index("date")["srf_usage_b"])
+if "date" in srf_df.columns:
+	srf_df = srf_df.set_index("date")
+selected_srf_col = st.selectbox("Select SRF column to plot", [col for col in srf_df.columns])
+st.line_chart(srf_df[selected_srf_col])
 
 st.header("Treasury Issuance Data")
-st.line_chart(treasury_df.set_index("date")["issuance_b"])
+if "date" in treasury_df.columns:
+	treasury_df = treasury_df.set_index("date")
+selected_treasury_col = st.selectbox("Select Treasury column to plot", [col for col in treasury_df.columns])
+st.line_chart(treasury_df[selected_treasury_col])
 
 st.success("Dashboard loaded. Use the sidebar to select data ranges and analysis options (to be added).")
