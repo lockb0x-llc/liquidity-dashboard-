@@ -267,33 +267,44 @@ with st.container():
             )
 
     # Data source indicator
-    # --- Enhanced ON RRP Data Source Messaging ---
+    # Only show live or live_empty data source messages
     data_source = None
     if onrrp_df is not None and "_data_source" in onrrp_df.columns:
         data_source = onrrp_df["_data_source"].iloc[0]
 
-    if data_source == "mock":
-        st.error("ON RRP data is from demo/mock source. The NY Fed API was unreachable or returned an error. Please check your network or API status.")
-    elif data_source == "live_empty":
+    if data_source == "live_empty":
         st.warning("ON RRP data is empty. The NY Fed API returned no results for the selected parameters. There may be no recent ON RRP operations.")
     elif data_source == "live":
         st.success("ON RRP data is live from the NY Fed API.")
     else:
-        st.info("ON RRP data source unknown or legacy. Please verify data integrity.")
+        st.info("ON RRP data source unknown. Please verify data integrity.")
 
     # Display ON RRP data
     if onrrp_df is not None and not onrrp_df.empty:
-        st.write(f"ON RRP DataFrame shape: {onrrp_df.shape}")
-        st.write(f"ON RRP DataFrame columns: {list(onrrp_df.columns)}")
+        # Standardize columns to match NY Fed API
         rename_map = {
             "operation_date": "Date",
             "accepted_amount": "Accepted_Billions",
-            "counterparties": "Counterparties"
+            "counterparties": "Counterparties",
+            "rate": "Rate",
+            "operation_type": "Operation_Type"
         }
         onrrp_df = onrrp_df.rename(columns={k: v for k, v in rename_map.items() if k in onrrp_df.columns})
 
+        # Filter by operation type if present
+        if "Operation_Type" in onrrp_df.columns:
+            op_types = onrrp_df["Operation_Type"].unique().tolist()
+            selected_op_type = st.selectbox("Select Operation Type", op_types)
+            onrrp_df = onrrp_df[onrrp_df["Operation_Type"] == selected_op_type]
+
+        st.write(f"ON RRP DataFrame shape: {onrrp_df.shape}")
+        st.write(f"ON RRP DataFrame columns: {list(onrrp_df.columns)}")
+
+        # Show table
+        st.dataframe(onrrp_df)
+
+        # Plot Accepted_Billions
         if "Date" in onrrp_df.columns and "Accepted_Billions" in onrrp_df.columns:
-            st.dataframe(onrrp_df)
             st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
 
             import altair as alt
@@ -304,38 +315,42 @@ with st.container():
             tooltip_fields = [
                 alt.Tooltip("Date:T", title="Date"),
                 alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
-                alt.Tooltip("note:N", title="Note")
+                alt.Tooltip("Counterparties:N", title="Counterparties"),
+                alt.Tooltip("Rate:Q", title="Rate", format=".2f"),
+                alt.Tooltip("Operation_Type:N", title="Operation Type")
             ]
             chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
                 x=alt.X("Date:T", title="Date"),
                 y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
+                color=alt.Color("Operation_Type:N", legend=None),
                 tooltip=tooltip_fields
             ).properties(
                 title="ON RRP Accepted Amounts"
             )
             st.altair_chart(chart, use_container_width=True)
 
-            # Latest operation summary
-            latest_row = onrrp_df.iloc[-1]
-            date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
-            accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
-            counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
-            if pd.isna(accepted):
-                accepted_str = "N/A"
-            else:
-                accepted_str = f"${accepted:.2f}B"
-            if pd.isna(counterparties):
-                counterparties_str = "N/A"
-            else:
-                counterparties_str = str(counterparties)
-            st.markdown(f"**Latest ON RRP Operation:**  ")
-            st.markdown(f"Date: {date_str}  ")
-            st.markdown(f"Accepted Amount: {accepted_str}  ")
-            st.markdown(f"Counterparties: {counterparties_str}")
-            csv = onrrp_df.to_csv(index=False).encode()
-            st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
-        else:
-            st.warning("ON RRP data is missing required columns for visualization. Please check the data source or API response.")
+        # Plot Rate if present
+        if "Date" in onrrp_df.columns and "Rate" in onrrp_df.columns:
+            st.line_chart(onrrp_df.set_index("Date")["Rate"])
+
+        # Latest operation summary
+        latest_row = onrrp_df.iloc[-1]
+        date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
+        accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
+        counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
+        rate = latest_row["Rate"] if "Rate" in latest_row else None
+        op_type = latest_row["Operation_Type"] if "Operation_Type" in latest_row else "N/A"
+        accepted_str = f"${accepted:.2f}B" if not pd.isna(accepted) else "N/A"
+        counterparties_str = str(counterparties) if not pd.isna(counterparties) else "N/A"
+        rate_str = f"{rate:.2f}" if rate is not None else "N/A"
+        st.markdown(f"**Latest ON RRP Operation:**  ")
+        st.markdown(f"Date: {date_str}  ")
+        st.markdown(f"Accepted Amount: {accepted_str}  ")
+        st.markdown(f"Counterparties: {counterparties_str}  ")
+        st.markdown(f"Rate: {rate_str}  ")
+        st.markdown(f"Operation Type: {op_type}")
+        csv = onrrp_df.to_csv(index=False).encode()
+        st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
     else:
         st.warning("ON RRP data not available or no results for selected parameters.")
 

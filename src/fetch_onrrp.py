@@ -25,14 +25,9 @@ class ONRRPFetcher:
     
     def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
         """
-        Robustly fetch ON RRP data from NY Fed API.
-        Uses only documented endpoints:
-        - latest: /operation-results/results/last/1.json
-        - last_n: /operation-results/results/last/{N}.json
-        - date: /operation-results/results/date/{YYYYMMDD}.json
+        Fetch ON RRP data from NY Fed API only. No mock or fallback data.
         """
         def parse_response(data):
-            # NY Fed ON RRP API returns a list of dicts (operations)
             if isinstance(data, dict) and "repo" in data and "operations" in data["repo"]:
                 return data["repo"]["operations"]
             elif isinstance(data, dict) and "operations" in data:
@@ -44,21 +39,17 @@ class ONRRPFetcher:
                 return []
 
         df = pd.DataFrame()
-        api_error = False
-        api_response_logged = False
-
-        # 1. Try latest operation
+        headers = {
+            "User-Agent": "Mozilla/5.0 (liquidity-dashboard/1.0)",
+            "Accept": "application/json"
+        }
         if mode == "latest":
             try:
                 url_latest = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
                 logger.info(f"Attempting to fetch latest ON RRP operation: {url_latest}")
-                response = requests.get(url_latest, timeout=15)
+                response = requests.get(url_latest, timeout=15, headers=headers)
                 logger.info(f"API status code: {response.status_code}")
-                try:
-                    logger.info(f"API raw response: {response.text}")
-                    api_response_logged = True
-                except Exception as log_exc:
-                    logger.warning(f"Could not log raw response: {log_exc}")
+                logger.info(f"API raw response: {response.text}")
                 response.raise_for_status()
                 data = response.json()
                 operations = parse_response(data)
@@ -69,21 +60,15 @@ class ONRRPFetcher:
                     logger.warning("No results from latest ON RRP operation endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching latest ON RRP operation: {e}")
-                api_error = True
 
-        # 2. Try last N operations
         elif mode == "last_n":
             try:
                 n = last_n if last_n else 10
                 url_last_n = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/{n}.json"
                 logger.info(f"Attempting to fetch last {n} ON RRP operations: {url_last_n}")
-                response = requests.get(url_last_n, timeout=15)
+                response = requests.get(url_last_n, timeout=15, headers=headers)
                 logger.info(f"API status code: {response.status_code}")
-                try:
-                    logger.info(f"API raw response: {response.text}")
-                    api_response_logged = True
-                except Exception as log_exc:
-                    logger.warning(f"Could not log raw response: {log_exc}")
+                logger.info(f"API raw response: {response.text}")
                 response.raise_for_status()
                 data = response.json()
                 operations = parse_response(data)
@@ -94,12 +79,9 @@ class ONRRPFetcher:
                     logger.warning(f"No results from last {n} ON RRP operations endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching last {n} ON RRP operations: {e}")
-                api_error = True
 
-        # 3. Try specific date (if provided)
         elif mode == "date_range" and start_date:
             try:
-                # NY Fed only supports single date queries, so fetch each date in range and concatenate
                 date_list = pd.date_range(start=start_date, end=end_date or start_date, freq='D')
                 all_ops = []
                 for d in date_list:
@@ -107,13 +89,9 @@ class ONRRPFetcher:
                     url_date = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/date/{date_str}.json"
                     logger.info(f"Attempting to fetch ON RRP data for date: {url_date}")
                     try:
-                        response = requests.get(url_date, timeout=15)
+                        response = requests.get(url_date, timeout=15, headers=headers)
                         logger.info(f"API status code: {response.status_code}")
-                        try:
-                            logger.info(f"API raw response: {response.text}")
-                            api_response_logged = True
-                        except Exception as log_exc:
-                            logger.warning(f"Could not log raw response: {log_exc}")
+                        logger.info(f"API raw response: {response.text}")
                         response.raise_for_status()
                         data = response.json()
                         ops = parse_response(data)
@@ -121,7 +99,6 @@ class ONRRPFetcher:
                             all_ops.extend(ops)
                     except Exception as e:
                         logger.error(f"Error fetching ON RRP data for {date_str}: {e}")
-                        api_error = True
                 if all_ops:
                     logger.info(f"Successfully fetched ON RRP data for date range.")
                     df = pd.DataFrame(all_ops)
@@ -129,47 +106,15 @@ class ONRRPFetcher:
                     logger.warning("No results from ON RRP date range endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching ON RRP data for range: {e}")
-                api_error = True
 
-        # 4. Fallback to mock/demo data ONLY if API call failed (not if API returned empty)
-        if api_error:
-            logger.warning("ON RRP API error, using mock/demo data.")
-            df = self._generate_mock_data(datetime.today() - timedelta(days=30), datetime.today())
-            df["_data_source"] = "mock"
+        # Mark data source as live only
+        if not df.empty:
+            df["_data_source"] = "live"
         else:
-            # If API call succeeded but returned empty, return empty DataFrame with source info
-            df["_data_source"] = "live" if not df.empty else "live_empty"
+            df["_data_source"] = "live_empty"
         return df
     
-    def _generate_mock_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
-        """Generate mock ON RRP data for testing"""
-        date_range = pd.date_range(start=start_date, end=end_date, freq='D')
-        
-        # Generate realistic ON RRP amounts (typically $1.5-2.5 trillion)
-        base_amount = 2000  # $2 trillion baseline
-        amounts = []
-        
-        for i, date in enumerate(date_range):
-            # Add weekly patterns (lower on weekends)
-            weekly_factor = 0.9 if date.weekday() >= 5 else 1.0
-            
-            # Add some trend and randomness
-            trend = (i / len(date_range)) * 200  # Gradual increase
-            random_factor = (i % 17) * 30 - 150  # Pseudo-random variation
-            
-            amount = base_amount + trend + random_factor
-            amount *= weekly_factor
-            amounts.append(max(amount, 1000))  # Minimum floor
-        
-        df = pd.DataFrame({
-            'date': date_range,
-            'amount_billions': amounts,
-            'participants': [75 + (i % 25) for i in range(len(date_range))],
-            'rate': [5.25 + (i % 10) * 0.01 for i in range(len(date_range))]
-        })
-        
-        logger.info(f"Generated mock ON RRP data with {len(df)} records")
-        return df
+    # _generate_mock_data removed. Only real API data is used.
     
     def save_data(self, df: pd.DataFrame) -> bool:
         """Save ON RRP data to CSV"""
