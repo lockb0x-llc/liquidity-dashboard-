@@ -162,20 +162,6 @@ class ONRRPFetcher:
             'message': f"ON RRP at ${latest_amount:.1f}B ({'ABOVE' if is_stress else 'below'} stress threshold of ${stress_threshold}B)"
         }
     
-    fetcher = ONRRPFetcher()
-    df = fetcher.fetch_data(start_date, end_date)
-    
-    if df is not None and not df.empty:
-        fetcher.save_data(df)
-        stress_info = fetcher.check_stress_level(df)
-        logger.info(stress_info['message'])
-    
-    return df
-
-if __name__ == "__main__":
-    # Test the fetcher
-    df = fetch_onrrp_data()
-    if df is not None:
-        print(f"Fetched {len(df)} ON RRP records")
+    # ...existing code...
         print(df.head())
         print(f"Latest amount: ${df['amount_billions'].iloc[-1]:.1f}B")
