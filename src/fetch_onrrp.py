@@ -44,12 +44,21 @@ class ONRRPFetcher:
                 return []
 
         df = pd.DataFrame()
+        api_error = False
+        api_response_logged = False
+
         # 1. Try latest operation
         if mode == "latest":
             try:
                 url_latest = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
                 logger.info(f"Attempting to fetch latest ON RRP operation: {url_latest}")
                 response = requests.get(url_latest, timeout=15)
+                logger.info(f"API status code: {response.status_code}")
+                try:
+                    logger.info(f"API raw response: {response.text}")
+                    api_response_logged = True
+                except Exception as log_exc:
+                    logger.warning(f"Could not log raw response: {log_exc}")
                 response.raise_for_status()
                 data = response.json()
                 operations = parse_response(data)
@@ -60,6 +69,7 @@ class ONRRPFetcher:
                     logger.warning("No results from latest ON RRP operation endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching latest ON RRP operation: {e}")
+                api_error = True
 
         # 2. Try last N operations
         elif mode == "last_n":
@@ -68,6 +78,12 @@ class ONRRPFetcher:
                 url_last_n = f"https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/{n}.json"
                 logger.info(f"Attempting to fetch last {n} ON RRP operations: {url_last_n}")
                 response = requests.get(url_last_n, timeout=15)
+                logger.info(f"API status code: {response.status_code}")
+                try:
+                    logger.info(f"API raw response: {response.text}")
+                    api_response_logged = True
+                except Exception as log_exc:
+                    logger.warning(f"Could not log raw response: {log_exc}")
                 response.raise_for_status()
                 data = response.json()
                 operations = parse_response(data)
@@ -78,6 +94,7 @@ class ONRRPFetcher:
                     logger.warning(f"No results from last {n} ON RRP operations endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching last {n} ON RRP operations: {e}")
+                api_error = True
 
         # 3. Try specific date (if provided)
         elif mode == "date_range" and start_date:
@@ -91,6 +108,12 @@ class ONRRPFetcher:
                     logger.info(f"Attempting to fetch ON RRP data for date: {url_date}")
                     try:
                         response = requests.get(url_date, timeout=15)
+                        logger.info(f"API status code: {response.status_code}")
+                        try:
+                            logger.info(f"API raw response: {response.text}")
+                            api_response_logged = True
+                        except Exception as log_exc:
+                            logger.warning(f"Could not log raw response: {log_exc}")
                         response.raise_for_status()
                         data = response.json()
                         ops = parse_response(data)
@@ -98,6 +121,7 @@ class ONRRPFetcher:
                             all_ops.extend(ops)
                     except Exception as e:
                         logger.error(f"Error fetching ON RRP data for {date_str}: {e}")
+                        api_error = True
                 if all_ops:
                     logger.info(f"Successfully fetched ON RRP data for date range.")
                     df = pd.DataFrame(all_ops)
@@ -105,11 +129,16 @@ class ONRRPFetcher:
                     logger.warning("No results from ON RRP date range endpoint.")
             except Exception as e:
                 logger.error(f"Error fetching ON RRP data for range: {e}")
+                api_error = True
 
-        # 4. If still empty, fallback to mock/demo data
-        if df.empty:
-            logger.warning("ON RRP data unavailable, using mock/demo data.")
+        # 4. Fallback to mock/demo data ONLY if API call failed (not if API returned empty)
+        if api_error:
+            logger.warning("ON RRP API error, using mock/demo data.")
             df = self._generate_mock_data(datetime.today() - timedelta(days=30), datetime.today())
+            df["_data_source"] = "mock"
+        else:
+            # If API call succeeded but returned empty, return empty DataFrame with source info
+            df["_data_source"] = "live" if not df.empty else "live_empty"
         return df
     
     def _generate_mock_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
