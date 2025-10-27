@@ -273,7 +273,45 @@ with st.container():
     if onrrp_df is not None and not onrrp_df.empty:
         st.dataframe(onrrp_df)
         st.line_chart(onrrp_df.set_index("Date")["Accepted_Billions"])
-        st.write(f"Latest operation: {onrrp_df['Date'].iloc[-1].date()} | Accepted: ${onrrp_df['Accepted_Billions'].iloc[-1]:.2f}B | Counterparties: {int(onrrp_df['Counterparties'].iloc[-1])}")
+
+        # Enhanced ON RRP chart with tooltip showing note, date, and Accepted Billions
+        import altair as alt
+        import numpy as np
+
+        onrrp_chart_df = onrrp_df.copy()
+        onrrp_chart_df["Accepted_Billions"] = pd.to_numeric(onrrp_chart_df["Accepted_Billions"], errors="coerce")
+        onrrp_chart_df["Date"] = pd.to_datetime(onrrp_chart_df["Date"])
+
+        tooltip_fields = [
+            alt.Tooltip("Date:T", title="Date"),
+            alt.Tooltip("Accepted_Billions:Q", title="Accepted Billions", format=".2f"),
+            alt.Tooltip("note:N", title="Note")
+        ]
+
+        chart = alt.Chart(onrrp_chart_df).mark_line(point=True).encode(
+            x=alt.X("Date:T", title="Date"),
+            y=alt.Y("Accepted_Billions:Q", title="Accepted Billions (USD Bn)"),
+            tooltip=tooltip_fields
+        ).properties(
+            title="ON RRP Accepted Amounts"
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+
+        # Latest operation summary (unchanged)
+        latest_row = onrrp_df.iloc[-1]
+        date_str = latest_row["Date"].date() if "Date" in latest_row and pd.notna(latest_row["Date"]) else "N/A"
+        accepted = latest_row["Accepted_Billions"] if "Accepted_Billions" in latest_row else np.nan
+        counterparties = latest_row["Counterparties"] if "Counterparties" in latest_row else np.nan
+        if pd.isna(accepted):
+            accepted_str = "N/A"
+        else:
+            accepted_str = f"${accepted:.2f}B"
+        if pd.isna(counterparties):
+            counterparties_str = "N/A"
+        else:
+            counterparties_str = f"{int(counterparties)}"
+        st.write(f"Latest operation: {date_str} | Accepted: {accepted_str} | Counterparties: {counterparties_str}")
         # Export option
         csv = onrrp_df.to_csv(index=False).encode()
         st.download_button("Download CSV", csv, "on_rrp.csv", "text/csv")
