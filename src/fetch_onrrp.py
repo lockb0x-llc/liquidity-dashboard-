@@ -87,132 +87,77 @@ class ONRRPFetcher:
 
         # 3. If still empty, try date range (default: last 90 days)
         if df.empty:
-            try:
-                if not start_date:
-                    start_date = datetime.now() - timedelta(days=90)
-                if not end_date:
-                    end_date = datetime.now()
-                search_api = "https://markets.newyorkfed.org/api/rp/results/search.json"
-                params = {
-                    "operationType": "overnightreverse-repo",
-                    "operationMethod": "operation-results",
-                    "startDate": start_date.strftime("%Y-%m-%d"),
-                    "endDate": end_date.strftime("%Y-%m-%d"),
-                    "format": "json"
-                }
-                logger.info(f"Attempting to fetch ON RRP data for date range {params['startDate']} to {params['endDate']}")
-                response = requests.get(search_api, params=params, timeout=15)
-                response.raise_for_status()
-                data = response.json()
-                operations = parse_response(data)
-                if operations:
-                    logger.info(f"Successfully fetched ON RRP data for date range.")
-                    df = pd.DataFrame(operations)
-                else:
-                    logger.warning("No results from ON RRP date range endpoint.")
-                    df = pd.DataFrame()
-            except Exception as e:
-                logger.error(f"Error fetching ON RRP data for date range: {e}")
-                df = pd.DataFrame()
 
-        # 4. If still empty, log and return None
-        if df.empty:
-            logger.error("No ON RRP data available from any endpoint. Returning None.")
-            return None
+            import requests
+            import pandas as pd
+            import logging
+            from datetime import datetime, timedelta
 
-        # Standardize columns and handle missing keys robustly
-        logger.info(f"ON RRP raw columns: {list(df.columns)}")
-        rename_map = {}
-        if "operationDate" in df.columns:
-            rename_map["operationDate"] = "Date"
-        if "totalAmountAccepted" in df.columns:
-            rename_map["totalAmountAccepted"] = "Accepted_Billions"
-        if "participantCount" in df.columns:
-            rename_map["participantCount"] = "Counterparties"
-        df = df.rename(columns=rename_map)
+            logger = logging.getLogger(__name__)
 
-        # Convert date
-        if "Date" in df.columns:
-            df["Date"] = pd.to_datetime(df["Date"])
+            class ONRRPFetcher:
+                """
+                Fetches ON RRP (Overnight Reverse Repo) data from the NY Fed API.
+                Provides robust fallback logic for missing fields and handles errors gracefully.
+                """
+                BASE_URL = "https://markets.newyorkfed.org/api/rp/overnightreverse/search.json"
 
-        # Accepted_Billions: try totalAmountAccepted, else totalAmtAccepted
-        if "Accepted_Billions" in df.columns:
-            df["Accepted_Billions"] = pd.to_numeric(df["Accepted_Billions"], errors="coerce") / 1_000_000_000
-        elif "totalAmtAccepted" in df.columns:
-            df["Accepted_Billions"] = pd.to_numeric(df["totalAmtAccepted"], errors="coerce") / 1_000_000_000
-            logger.info("Used 'totalAmtAccepted' for Accepted_Billions.")
-        else:
-            logger.warning("'Accepted_Billions' column missing. Filling with NaN.")
-            df["Accepted_Billions"] = float('nan')
+                @staticmethod
+                def fetch_data(mode="live", start_date=None, end_date=None, last_n=30):
+                    """
+                    Fetch ON RRP data from NY Fed API or demo file.
+                    Args:
+                        mode (str): 'live' or 'demo'.
+                        start_date (str): 'YYYY-MM-DD'.
+                        end_date (str): 'YYYY-MM-DD'.
+                        last_n (int): Number of most recent records if no date range provided.
+                    Returns:
+                        pd.DataFrame or None: ON RRP data, or None if unavailable.
+                    """
+                    if mode == "demo":
+                        try:
+                            return pd.read_csv("data/onrrp_sample.csv")
+                        except Exception as e:
+                            logger.error(f"Demo ON RRP data not available: {e}")
+                            return None
 
-        # Counterparties: try participantCount, else count acceptedCpty
-        if "Counterparties" in df.columns:
-            df["Counterparties"] = pd.to_numeric(df["Counterparties"], errors="coerce")
-        elif "acceptedCpty" in df.columns:
-            # acceptedCpty is a list of counterparties per operation
-            df["Counterparties"] = df["acceptedCpty"].apply(lambda x: len(x) if isinstance(x, list) else float('nan'))
-            logger.info("Used 'acceptedCpty' for Counterparties.")
-        else:
-            logger.warning("'Counterparties' column missing. Filling with NaN.")
-            df["Counterparties"] = float('nan')
+                    params = {"format": "json"}
+                    if start_date and end_date:
+                        params["startDate"] = start_date
+                        params["endDate"] = end_date
+                    else:
+                        today = datetime.today()
+                        params["startDate"] = (today - timedelta(days=60)).strftime("%Y-%m-%d")
+                        params["endDate"] = today.strftime("%Y-%m-%d")
 
-        df = df.sort_values("Date").reset_index(drop=True)
+                    try:
+                        response = requests.get(ONRRPFetcher.BASE_URL, params=params, timeout=10)
+                        response.raise_for_status()
+                        data = response.json()
+                        records = data.get("repoOperations", [])
+                        if not records:
+                            logger.warning("No ON RRP records found in API response.")
+                            return None
+                        df = pd.DataFrame(records)
+                    except Exception as e:
+                        logger.error(f"ON RRP API fetch failed: {e}")
+                        return None
 
-        # Save to CSV
-        try:
-            df.to_csv("data/on_rrp.csv", index=False)
-            logger.info(f"Saved ON RRP data to data/on_rrp.csv with {len(df)} records. Columns: {list(df.columns)}")
-        except Exception as e:
-            logger.error(f"Failed to save ON RRP data to CSV: {e}")
+                    # Ensure required columns
+                    for col in ["operationDate", "acceptedAmount", "note"]:
+                        if col not in df.columns:
+                            df[col] = pd.NA
 
-        return df
-    
-    def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Process and clean ON RRP data"""
-        try:
-            # Standardize column names (adjust based on actual API response)
-            column_mapping = {
-                'operationDate': 'date',
-                'totalAmountAccepted': 'amount_billions',
-                'participantCount': 'participants',
-                'averageRate': 'rate'
-            }
-            
-            # Rename columns if they exist
-            for old_col, new_col in column_mapping.items():
-                if old_col in df.columns:
-                    df = df.rename(columns={old_col: new_col})
-            
-            # Ensure we have required columns
-            if 'date' not in df.columns:
-                df['date'] = pd.date_range(start=datetime.now() - timedelta(days=len(df)), periods=len(df))
-            
-            # Convert date column
-            df['date'] = pd.to_datetime(df['date'])
-            
-            # Convert amount to billions if needed
-            if 'amount_billions' in df.columns:
-                # Assume data might be in millions, convert to billions
-                df['amount_billions'] = pd.to_numeric(df['amount_billions'], errors='coerce') / 1000
-            else:
-                # Generate realistic mock amounts
-                df['amount_billions'] = 1800 + (pd.Series(range(len(df))) * 10) + (pd.Series(range(len(df))) % 7) * 50
-            
-            # Add missing columns with defaults
-            if 'participants' not in df.columns:
-                df['participants'] = 80 + (pd.Series(range(len(df))) % 20)
-            
-            if 'rate' not in df.columns:
-                df['rate'] = 5.25 + (pd.Series(range(len(df))) % 10) * 0.05
-            
-            # Sort by date
-            df = df.sort_values('date').reset_index(drop=True)
-            
-            return df
-            
-        except Exception as e:
-            logger.error(f"Error processing ON RRP data: {e}")
-            return pd.DataFrame()
+                    # Convert acceptedAmount to float (billions)
+                    df["acceptedAmount"] = pd.to_numeric(df["acceptedAmount"], errors="coerce") / 1e9
+                    # Parse operationDate to datetime
+                    df["operationDate"] = pd.to_datetime(df["operationDate"], errors="coerce")
+
+                    # Sort and trim
+                    df = df.sort_values("operationDate", ascending=False)
+                    if last_n:
+                        df = df.head(last_n)
+                    return df.reset_index(drop=True)
     
     def _generate_mock_data(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         """Generate mock ON RRP data for testing"""
