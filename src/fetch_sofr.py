@@ -35,8 +35,8 @@ class SOFRFetcher:
             response = safe_request(self.base_url, params=params)
             
             if response is None:
-                logger.warning("Failed to fetch SOFR data, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Failed to fetch SOFR data, source data not available")
+                return None
             
             data = response.json()
             
@@ -45,8 +45,8 @@ class SOFRFetcher:
                 rates_data = data['refRates']
                 df = pd.DataFrame(rates_data)
             else:
-                logger.warning("Unexpected SOFR API response structure, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Unexpected SOFR API response structure, source data not available")
+                return None
             
             # Clean and process data
             df = self._process_data(df)
@@ -54,7 +54,7 @@ class SOFRFetcher:
             
         except Exception as e:
             logger.error(f"Error fetching SOFR data: {e}")
-            return self._generate_mock_data(start_date, end_date)
+            return None
     
     def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Process and clean SOFR data"""

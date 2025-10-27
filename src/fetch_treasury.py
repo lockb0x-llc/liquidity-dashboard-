@@ -51,14 +51,14 @@ class TreasuryFetcher:
                         break
             
             if df is None or df.empty:
-                logger.warning("Failed to fetch Treasury data, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Failed to fetch Treasury data, source data not available")
+                return None
             
             return df
             
         except Exception as e:
             logger.error(f"Error fetching Treasury auction data: {e}")
-            return self._generate_mock_data(start_date, end_date)
+            return None
     
     def _process_treasury_data(self, df: pd.DataFrame, endpoint: str) -> pd.DataFrame:
         """Process Treasury API data based on endpoint"""

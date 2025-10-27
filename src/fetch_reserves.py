@@ -32,8 +32,8 @@ class ReservesFetcher:
             response = safe_request(self.base_url)
             
             if response is None:
-                logger.warning("Failed to fetch reserves data from Fed, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Failed to fetch reserves data from Fed, source data not available")
+                return None
             
             # Parse HTML response (Fed H.4.1 is typically in HTML format)
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -42,14 +42,14 @@ class ReservesFetcher:
             df = self._parse_h41_data(soup, start_date, end_date)
             
             if df is None or df.empty:
-                logger.warning("Could not parse reserves data, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Could not parse reserves data, source data not available")
+                return None
             
             return df
             
         except Exception as e:
             logger.error(f"Error fetching bank reserves data: {e}")
-            return self._generate_mock_data(start_date, end_date)
+            return None
     
     def _parse_h41_data(self, soup: BeautifulSoup, start_date: datetime, end_date: datetime) -> Optional[pd.DataFrame]:
         """Parse H.4.1 HTML data"""

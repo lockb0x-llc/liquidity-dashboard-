@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import logging
 
+from bs4 import BeautifulSoup
+
 from .config import DATA_SOURCES, DATA_FILES, THRESHOLDS
 from .utils import safe_request, save_data, load_data, format_date, suppress_warnings
 
@@ -21,40 +23,62 @@ class ONRRPFetcher:
         self.data_file = DATA_FILES['onrrp']
         suppress_warnings()
     
-    def fetch_data(self, start_date: datetime, end_date: datetime) -> Optional[pd.DataFrame]:
-        """Fetch ON RRP data from NY Fed API"""
+    def fetch_data(self, mode: str = "latest", start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, last_n: Optional[int] = None) -> Optional[pd.DataFrame]:
+        """
+        Fetch ON RRP data from NY Fed API.
+        Always uses the correct endpoint for latest operation: 'results/last/1.json'.
+        Ignores 'published/latest.json' (invalid).
+        """
         try:
-            # Build parameters for NY Fed API
-            params = {
-                'startDate': format_date(start_date),
-                'endDate': format_date(end_date),
-                'format': 'json'
-            }
-            
-            logger.info(f"Fetching ON RRP data from {start_date.date()} to {end_date.date()}")
-            response = safe_request(self.base_url, params=params)
-            
-            if response is None:
-                logger.warning("Failed to fetch ON RRP data, using mock data")
-                return self._generate_mock_data(start_date, end_date)
-            
+            # Only support fetching the latest operation for now
+            url = "https://markets.newyorkfed.org/api/rp/overnightreverse-repo/operation-results/results/last/1.json"
+            logger.info(f"Fetching ON RRP data from {url}")
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
             data = response.json()
-            
-            # Parse the response structure (adjust based on actual API response)
-            if 'repo' in data and 'operations' in data['repo']:
-                operations = data['repo']['operations']
-                df = pd.DataFrame(operations)
+
+            # Parse response
+            if isinstance(data, dict) and "repo" in data and "operations" in data["repo"]:
+                operations = data["repo"]["operations"]
+            elif isinstance(data, dict) and "operations" in data:
+                operations = data["operations"]
+            elif isinstance(data, list):
+                operations = data
             else:
-                logger.warning("Unexpected API response structure, using mock data")
-                return self._generate_mock_data(start_date, end_date)
-            
-            # Clean and process data
-            df = self._process_data(df)
+                logger.error("Unexpected ON RRP API response structure.")
+                return None
+
+            # Build DataFrame
+            df = pd.DataFrame(operations)
+            # Standardize columns
+            df = df.rename(columns={
+                "operationDate": "Date",
+                "totalAmountAccepted": "Accepted_Billions",
+                "participantCount": "Counterparties"
+            })
+            # Convert date
+            if "Date" in df.columns:
+                df["Date"] = pd.to_datetime(df["Date"])
+            # Convert amount to billions
+            if "Accepted_Billions" in df.columns:
+                df["Accepted_Billions"] = pd.to_numeric(df["Accepted_Billions"], errors="coerce") / 1_000_000_000
+            # Counterparties
+            if "Counterparties" in df.columns:
+                df["Counterparties"] = pd.to_numeric(df["Counterparties"], errors="coerce")
+
+            df = df.sort_values("Date").reset_index(drop=True)
+
+            # Save to CSV
+            try:
+                df.to_csv("data/on_rrp.csv", index=False)
+                logger.info(f"Saved ON RRP data to data/on_rrp.csv with {len(df)} records.")
+            except Exception as e:
+                logger.error(f"Failed to save ON RRP data to CSV: {e}")
+
             return df
-            
         except Exception as e:
             logger.error(f"Error fetching ON RRP data: {e}")
-            return self._generate_mock_data(start_date, end_date)
+            return None
     
     def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Process and clean ON RRP data"""

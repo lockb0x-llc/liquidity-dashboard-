@@ -35,8 +35,8 @@ class SRFFetcher:
             response = safe_request(self.base_url, params=params)
             
             if response is None:
-                logger.warning("Failed to fetch SRF data, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Failed to fetch SRF data, source data not available")
+                return None
             
             data = response.json()
             
@@ -45,8 +45,8 @@ class SRFFetcher:
                 operations = data['repo']['operations']
                 df = pd.DataFrame(operations)
             else:
-                logger.warning("Unexpected SRF API response structure, using mock data")
-                return self._generate_mock_data(start_date, end_date)
+                logger.warning("Unexpected SRF API response structure, source data not available")
+                return None
             
             # Clean and process data
             df = self._process_data(df)
@@ -54,7 +54,7 @@ class SRFFetcher:
             
         except Exception as e:
             logger.error(f"Error fetching SRF data: {e}")
-            return self._generate_mock_data(start_date, end_date)
+            return None
     
     def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Process and clean SRF data"""
