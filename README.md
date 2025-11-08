@@ -1,6 +1,63 @@
-# 🏦 Fed Liquidity Stress Dashboard
+# 🏦 Fed Liquidity Stress Dashboard (Applet Monorepo)
 
-A comprehensive modular Python application that tracks and visualizes systemic liquidity stress indicators in the U.S. financial system, including ON RRP balances, bank reserves, SOFR, SRF usage, and Treasury issuance. Designed for forensic analysts, macro strategists, and capital allocators.
+A modular Python application for tracking and visualizing systemic liquidity stress indicators in the U.S. financial system. The repo is now organized as a monorepo for modular applets. The current focus is the ON RRP (Overnight Reverse Repo) applet.
+
+## 📦 Monorepo Structure
+
+```
+liquidity-dashboard-
+├── applets/
+│   └── onrrp/
+│       ├── __init__.py
+│       └── fetch_onrrp.py   # ON RRP applet code
+├── src/
+│   └── common/
+│       ├── config.py        # Shared configuration
+│       └── utils.py         # Shared utilities
+├── dashboard.py             # Main ON RRP dashboard (CLI)
+├── streamlit_dashboard.py   # ON RRP Streamlit dashboard
+├── requirements.txt         # Python dependencies
+├── data/                    # CSV data storage
+└── docs/
+    └── AGENTS.md            # Architecture and usage notes
+```
+
+## 🚀 Quickstart
+
+### 1. Clone and Set Up
+
+```bash
+git clone <your-repo-url>
+cd liquidity-dashboard-
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Run the CLI Dashboard
+
+```bash
+python dashboard.py
+```
+
+### 3. Run the Streamlit Dashboard
+
+```bash
+streamlit run streamlit_dashboard.py
+```
+
+### 4. Add More Applets
+
+To add new applets (e.g., for Reserves, SOFR, SRF, Treasury):
+- Create a new folder in `applets/` (e.g., `applets/reserves/`)
+- Implement fetch and analysis logic in that folder
+- Update the main dashboard to import and use the new applet
+
+## 📝 Notes
+- The ON RRP dashboard always fetches fresh data from the NY Fed API.
+- Shared utilities and config are in `src/common/`.
+- Data is stored in the `data/` directory.
+- See `docs/AGENTS.md` for architecture and extension instructions.
 
 ## 🎯 Features
 
@@ -25,70 +82,19 @@ A comprehensive modular Python application that tracks and visualizes systemic l
 - 💹 **Volatility monitoring** and anomaly detection
 - 📋 **Export functionality** for further analysis
 
-## 📁 Project Structure
+## 🔗 Data Sources
 
-```
-liquidity-dashboard/
-├── dashboard.py           # Main orchestrator application
-├── plot_dashboard.py      # Visualization and plotting module
-├── test_dashboard.py      # Simplified demo version
-├── requirements.txt       # Python dependencies
-├── data/                  # CSV data storage
-└── src/                   # Core modules
-    ├── __init__.py
-    ├── config.py          # Configuration and thresholds
-    ├── utils.py           # Common utilities
-    ├── fetch_onrrp.py     # ON RRP data fetcher
-    ├── fetch_reserves.py  # Bank reserves data fetcher
-    ├── fetch_sofr.py      # SOFR rate data fetcher
-    ├── fetch_srf.py       # SRF usage data fetcher
-    └── fetch_treasury.py  # Treasury auction data fetcher
-```
+- **NY Fed Markets**: ON RRP data
 
-## 📊 Data Sources
+## 🛠️ Development Notes
 
-- **NY Fed Markets**: ON RRP, SOFR, SRF data
-- **Federal Reserve H.4.1**: Bank reserves and monetary base
-- **Treasury.gov API**: Auction results and issuance data
+- Shared utilities and configuration are in `src/common/`
+- Each applet is self-contained and can be developed/tested independently
+- The dashboard and UI are currently focused on ON RRP, but are designed to be easily extended
 
+## 📚 Documentation
 
-## 🚀 Running Locally
-
-```bash
-git clone <your-repo-url>
-cd liquidity-dashboard-
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-streamlit run streamlit_dashboard.py
-```
-
-## ☁️ Deploying to Azure Web Apps (App Service)
-
-You can deploy this dashboard to Azure Web Apps using VS Code and the Azure Tools extension pack:
-
-1. **Install Azure Tools Extension Pack** in VS Code.
-2. **Sign in to Azure** in VS Code.
-3. **Open your project folder** in VS Code.
-4. Open the Command Palette (`Cmd+Shift+P`), run `Azure: Create Web App`, and follow prompts:
-    - Select your subscription
-    - Choose a unique app name
-    - Select Python 3.x runtime
-    - Choose your region
-5. When prompted, select your project folder for deployment.
-6. In the Azure portal or VS Code, set the startup command:
-    ```
-    streamlit run streamlit_dashboard.py --server.port 8000 --server.address 0.0.0.0
-    ```
-    (Set this in the "Startup Command" field under "Configuration" in the Azure portal.)
-7. Ensure your `requirements.txt` is present and up to date.
-8. Deploy using `Azure: Deploy to Web App` in VS Code.
-9. Access your dashboard via the provided Azure URL.
-
-**Troubleshooting:**
-- If you see a blank page, check the Azure Web App logs for errors.
-- Make sure the port and address are set as above.
-- Ensure all dependencies are listed in `requirements.txt`.
+See `docs/AGENTS.md` for architecture details and applet integration guidelines.
 
 ---
 ### Default Stress Thresholds
