@@ -76,4 +76,9 @@ Alert thresholds and API endpoints can be modified in `src/config.py`:
 - [Federal Reserve H.4.1 Release](https://www.federalreserve.gov/releases/h41/)
 
 ---
+
+![Screenshot](docs/Screenshot_2-1-2026_175926_localhost.png)
+
 *Built for macro analysts and financial engineers seeking transparency in systemic liquidity.*
+
+
