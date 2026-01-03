@@ -21,7 +21,7 @@ DATA_SOURCES = {
     'FED_H41': 'https://www.federalreserve.gov/releases/h41/current/',
     'NY_FED_SOFR': 'https://markets.newyorkfed.org/api/rates/secured/sofr/search.json',
     'NY_FED_SRF': 'https://markets.newyorkfed.org/api/rp/standingrepofacility/search.json',
-    'TREASURY_GOV': 'https://api.fiscaldata.treasury.gov/services/api/v1/',
+    'TREASURY_GOV': 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/',
 }
 
 # File paths

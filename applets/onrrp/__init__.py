@@ -1,1 +1,0 @@
-# ON RRP applet package

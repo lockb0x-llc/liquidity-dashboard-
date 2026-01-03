@@ -114,7 +114,19 @@ class ONRRPFetcher:
             df["Date"] = pd.to_datetime(df["operationDate"]) if "operationDate" in df.columns else pd.NaT
             df["Accepted_Billions"] = df["totalAmtAccepted"].astype(float) / 1e9 if "totalAmtAccepted" in df.columns else pd.NA
             df["Counterparties"] = df["acceptedCpty"] if "acceptedCpty" in df.columns else pd.NA
-            df["Rate"] = df["rate"].astype(float) if "rate" in df.columns else pd.NA
+            
+            # Extract Rate from details list (NY Fed API structure)
+            if "details" in df.columns:
+                def get_rate(details):
+                    if isinstance(details, list) and len(details) > 0:
+                        return details[0].get("percentAwardRate")
+                    return None
+                df["Rate"] = df["details"].apply(get_rate).astype(float)
+            elif "rate" in df.columns:
+                df["Rate"] = df["rate"].astype(float)
+            else:
+                df["Rate"] = pd.NA
+                
             df["Operation_Type"] = df["operationType"] if "operationType" in df.columns else pd.NA
             df["_data_source"] = "live"
         else:
