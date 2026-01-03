@@ -1,26 +1,3 @@
 {
-  "servers": [
-    {
-      "name": "Azure Web App",
-      "type": "azure-webapp",
-      "resourceGroup": "liquidity-dashboard-rg",
-      "appName": "liquidity-dashboard-app",
-      "location": "eastus",
-      "runtime": "PYTHON|3.10",
-      "startupCommand": "streamlit run streamlit_dashboard.py --server.port 8000 --server.address 0.0.0.0"
-    },
-    {
-      "name": "Local Development",
-      "type": "local",
-      "host": "localhost",
-      "port": 8501,
-      "startupCommand": "streamlit run streamlit_dashboard.py"
-    },
-    {
-      "name": "Streamlit Cloud",
-      "type": "streamlit-cloud",
-      "repoUrl": "https://github.com/lockb0x-llc/liquidity-dashboard-",
-      "mainFile": "streamlit_dashboard.py"
-    }
-  ]
+  
 }
