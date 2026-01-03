@@ -54,31 +54,31 @@ class ReservesFetcher:
     def _parse_h41_data(self, soup: BeautifulSoup, start_date: datetime, end_date: datetime) -> Optional[pd.DataFrame]:
         """Parse H.4.1 HTML data"""
         try:
-            # This is a simplified parser - the actual Fed H.4.1 format may vary
             tables = soup.find_all('table')
             
-            # Look for tables containing reserve data
             for table in tables:
                 text = table.get_text().lower()
-                if 'reserves' in text and 'depository' in text:
-                    # Found a potential reserves table
+                if 'reserve balances' in text and 'depository' in text:
                     rows = table.find_all('tr')
-                    
-                    # Extract data (this is a basic example)
                     for row in rows:
                         cells = row.find_all(['td', 'th'])
-                        if len(cells) >= 2:
-                            cell_text = [cell.get_text().strip() for cell in cells]
-                            
-                            # Look for reserve balances
-                            if 'reserve balances' in ' '.join(cell_text).lower():
-                                # Extract numeric value
-                                for cell in cell_text:
-                                    match = re.search(r'[\d,]+\.?\d*', cell.replace(',', ''))
-                                    if match:
-                                        amount = float(match.group())
-                                        # Create basic dataframe
-                                        return self._create_reserves_df(amount, start_date, end_date)
+                        cell_texts = [cell.get_text().strip() for cell in cells]
+                        combined_text = ' '.join(cell_texts).lower()
+                        
+                        if 'reserve balances with federal reserve banks' in combined_text:
+                            # Usually the last numeric value in the row is the Wednesday value
+                            # Or we can just find any large numeric value
+                            for cell in reversed(cell_texts):
+                                clean_cell = cell.replace(',', '')
+                                match = re.search(r'(\d{6,})', clean_cell) # Look for 6+ digits
+                                if match:
+                                    amount_millions = float(match.group(1))
+                                    amount_billions = amount_millions / 1000.0
+                                    return self._create_reserves_df(amount_billions, start_date, end_date)
+            return None
+        except Exception as e:
+            logger.error(f"Error parsing H.4.1 data: {e}")
+            return None
             
             # If no data found, return None
             return None

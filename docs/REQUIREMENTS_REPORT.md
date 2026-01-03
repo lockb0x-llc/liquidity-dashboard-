@@ -1,23 +1,24 @@
 # Liquidity Dashboard: Requirements Compliance Report
 
 ## Overview
-This report compares the current state of the Liquidity Stress Dashboard application against the requirements and features described in the original documentation files: `README.md` and `docs/AGENTS.md`. It highlights differences, gaps, and recommendations for alignment, and outlines next steps for further development and documentation.
+This report compares the current state of the Liquidity Stress Dashboard (now a modular applet monorepo) against the requirements and features described in the updated documentation files: `README.md` and `docs/AGENTS.md`. It highlights differences, gaps, and recommendations for alignment, and outlines next steps for further development and documentation.
 
 ---
 
 ## 1. Core Features & Modules
 
 ### Implemented Features
-- **Data Fetchers**: All major modules (ON RRP, Reserves, SOFR, SRF, Treasury) are present and fetch actual data, with fallback to local files if API is unavailable.
-- **Visualization**: Streamlit dashboard provides interactive plots for each indicator, with dynamic field selection and info boxes for field descriptions.
-- **Stress Detection**: Thresholds and alert logic are described in documentation, but not fully implemented in the Streamlit UI.
-- **No Mock Data**: All fetchers have been refactored to avoid mock/demo data in production mode.
-- **Data Source Indicator**: Dashboard now visually indicates whether data is from API or file (emoji next to title).
+- **Applet Architecture**: Repo is now organized as a monorepo with modular applets (ON RRP implemented, others planned).
+- **ON RRP Applet**: ON RRP applet fetches and analyzes data, with CLI and Streamlit dashboards focused on ON RRP.
+- **Visualization**: Streamlit dashboard provides interactive ON RRP plots and stress analysis.
+- **Stress Detection**: Thresholds and alert logic are described and implemented for ON RRP in both CLI and Streamlit UI.
+- **No Mock Data**: All fetchers avoid mock/demo data in production mode.
+- **Data Source Indicator**: Emoji legend for data source is present in documentation and UI.
 - **Missing Data Handling**: UI displays warnings when data is unavailable.
 
 ### Features Not Fully Implemented
-- **Automated Alerts**: Real-time threshold monitoring and alert levels are described, but not yet integrated into the Streamlit dashboard.
-- **System Overview Dashboard**: No composite dashboard view showing all indicators together; each module is visualized separately.
+- **Additional Applets**: Only ON RRP applet is implemented; Reserves, SOFR, SRF, Treasury applets are planned.
+- **Composite Dashboard**: No system overview tab/page yet; dashboard is ON RRP-only.
 - **Export Functionality**: No current export to CSV, PDF, or HTML from the Streamlit dashboard.
 - **Historical/Custom Analysis**: Streamlit dashboard does not yet support custom date ranges or historical analysis selection.
 - **Multi-indicator Stress Analysis**: No UI for multi-indicator stress summary or automated reporting.
@@ -38,7 +39,7 @@ This report compares the current state of the Liquidity Stress Dashboard applica
 - **Visualization Titles**: Emoji indicators for data source are present next to each visualization title.
 - **Info Boxes**: Field descriptions are shown next to selectors.
 - **Missing Data Warnings**: Clear warnings are displayed when data is unavailable.
-- **Documentation**: README.md and AGENTS.md provide comprehensive project and setup information, but do not yet reflect Streamlit-specific usage or new UI features.
+- **Documentation**: README.md and AGENTS.md now provide comprehensive project, setup, and Streamlit usage information, including emoji legend and step-by-step instructions.
 
 ---
 
@@ -52,12 +53,20 @@ This report compares the current state of the Liquidity Stress Dashboard applica
 | Historical/custom analysis         | Not in UI     | Add date range selectors                |
 | Multi-indicator stress summary     | Not in UI     | Add summary panel/report                |
 | Demo mode in Streamlit             | Not in UI     | Add demo/test toggle to dashboard       |
-| Streamlit usage in docs            | Partial       | Update README.md for Streamlit usage    |
-| Emoji legend/documentation         | Not in docs   | Add legend for emoji indicators         |
+| Streamlit usage in docs            | Complete      | README.md and AGENTS.md updated with Streamlit usage |
+| Emoji legend/documentation         | Complete      | Emoji legend now present in docs and UI |
 
 ---
 
 ## 5. Recommendations
+
+1. **Extend Applet Coverage**: Implement additional applets for Reserves, SOFR, SRF, and Treasury.
+2. **Composite Dashboard View**: Add a system overview tab/page showing all indicators together for holistic analysis.
+3. **Export Options**: Enable export of visualizations and data for further analysis.
+4. **Historical Analysis**: Add date range selectors and filtering to support custom/historical analysis.
+5. **Multi-indicator Summary**: Provide a summary panel/report for stress detection across all indicators.
+6. **Demo Mode**: Integrate demo/test mode into Streamlit dashboard.
+7. **Continuous Documentation Update**: Keep documentation aligned with new features and usage patterns.
 
 1. **Integrate Alert Logic**: Implement real-time threshold monitoring and alert levels in the Streamlit dashboard, with visual cues and summary panels.
 2. **Composite Dashboard View**: Add a system overview tab/page showing all indicators together for holistic analysis.

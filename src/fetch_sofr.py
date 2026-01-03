@@ -62,10 +62,8 @@ class SOFRFetcher:
             # Standardize column names (adjust based on actual API response)
             column_mapping = {
                 'effectiveDate': 'date',
-                'ratePercent': 'sofr_rate',
-                'volume': 'volume_billions',
-                'percentile25': 'rate_25th',
-                'percentile75': 'rate_75th'
+                'percentRate': 'sofr_rate',
+                'volumeInBillions': 'volume_billions'
             }
             
             # Rename columns if they exist

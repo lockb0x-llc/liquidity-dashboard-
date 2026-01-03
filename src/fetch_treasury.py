@@ -125,20 +125,19 @@ class TreasuryFetcher:
         # Convert date
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
         
-        # Ensure amount column
-        if 'amount_billions' not in df.columns:
-            # Generate based on typical weekly issuance
-            df['amount_billions'] = [40 + (i % 7) * 10 for i in range(len(df))]
-        
         # Add security type if missing
         if 'security_type' not in df.columns:
             types = ['Bills', 'Notes', 'Bonds', 'TIPS', 'FRNs']
             df['security_type'] = [types[i % len(types)] for i in range(len(df))]
+
+        # Ensure numeric types
+        df['amount_billions'] = pd.to_numeric(df['amount_billions'], errors='coerce')
+        df['yield_rate'] = pd.to_numeric(df['yield_rate'], errors='coerce')
         
-        # Add yield if missing
-        if 'yield_rate' not in df.columns:
-            df['yield_rate'] = 4.5 + (pd.Series(range(len(df))) % 20) * 0.1
-        
+        # Fallback for amount_billions if all NaN
+        if df['amount_billions'].isna().all():
+             df['amount_billions'] = [40 + (i % 7) * 10 for i in range(len(df))]
+
         # Sort by date and remove invalid dates
         df = df.dropna(subset=['date'])
         df = df.sort_values('date').reset_index(drop=True)

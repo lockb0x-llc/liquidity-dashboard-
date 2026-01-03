@@ -21,7 +21,7 @@ DATA_SOURCES = {
     'FED_H41': 'https://www.federalreserve.gov/releases/h41/current/',
     'NY_FED_SOFR': 'https://markets.newyorkfed.org/api/rates/secured/sofr/search.json',
     'NY_FED_SRF': 'https://markets.newyorkfed.org/api/rp/standingrepofacility/search.json',
-    'TREASURY_GOV': 'https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/',
+    'TREASURY_GOV': 'https://api.fiscaldata.treasury.gov/services/api/v1/',
 }
 
 # File paths
@@ -50,19 +50,6 @@ THRESHOLDS = {
     'treasury_issuance_high': 50,  # Billion USD weekly
 }
 
-# Date ranges for data fetching
-DEFAULT_START_DATE = datetime.now() - timedelta(days=365)
-DEFAULT_END_DATE = datetime.now()
-
-# Plotting configuration
-PLOT_CONFIG = {
-    'figsize': (12, 8),
-    'style': 'whitegrid',
-    'color_palette': 'Set2',
-    'save_format': 'png',
-    'dpi': 300,
-}
-
-# Logging configuration
+# Logging
 LOG_LEVEL = 'INFO'
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s %(message)s'
