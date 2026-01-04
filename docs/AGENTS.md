@@ -39,17 +39,16 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-## ☁️ Deployment
+### Azure App Service (Recommended)
+Since Streamlit is a server-side Python application, **Azure App Service** is the preferred hosting platform.
 
-### Azure Static Web Apps
-This application is hosted on **Azure Static Web Apps**.
-
-1. **Setup Credentials**: 
-   - Ensure the `AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_DESERT_0C64A9D1E` secret is configured in your GitHub repository.
-2. **CI/CD**: The workflow in `.github/workflows/azure-static-web-apps-yellow-desert-0c64a9d1e.yml` handles the build and deployment on merged Pull Requests to `main`.
-3. **Important Configuration**:
-   - `app_location`: Set to `/` in the workflow file.
-   - `output_location`: If using a static build (Stlite), specify the output directory.
+1. **Create Web App**: In the Azure Portal, create a "Web App" with the **Python** runtime.
+2. **Setup Credentials**: 
+   - Generate a Service Principal: `az ad sp create-for-rbac --sdk-auth`
+   - Save the JSON output as a GitHub Secret named `AZURE_CREDENTIALS`.
+3. **Configuration**: 
+   - Set the startup command to: `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
+4. **CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` handles the build and deployment using the stored credentials.
 
 
 ---

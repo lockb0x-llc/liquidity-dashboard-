@@ -59,13 +59,17 @@ liquidity-dashboard/
 
 ## ☁️ Deployment
 
-### Azure Static Web Apps
-This application is hosted on **Azure Static Web Apps**.
+### Azure App Service (Recommended)
+This application is best hosted as an **Azure App Service (Linux Web App)** with Python 3.11+.
 
-1. **Setup Credentials**: 
-   - Ensure the `AZURE_STATIC_WEB_APPS_API_TOKEN_YELLOW_DESERT_0C64A9D1E` secret is configured in your GitHub repository.
-2. **CI/CD**: The workflow in `.github/workflows/azure-static-web-apps-yellow-desert-0c64a9d1e.yml` handles the build and deployment on merged Pull Requests to `main`.
-3. **Streamlit Note**: Since SWA is for static content, running a standard Streamlit app may require using **Stlite** (WebAssembly) or hosting the backend separately.
+1. **Create Resource**: Create a Web App (Python) in the Azure Portal.
+2. **Setup Credentials**: 
+   - Generate a Service Principal using Azure CLI:
+     `az ad sp create-for-rbac --name "myApp" --role contributor --scopes /subscriptions/<sub-id>/resourceGroups/<rg-name> --sdk-auth`
+   - Add the resulting JSON to GitHub Secrets as `AZURE_CREDENTIALS`.
+3. **Setup CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` will now use these credentials.
+4. **Startup Command**: In Azure Portal, set the startup command to:
+   `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
 
 
 ## ⚙️ Configuration
