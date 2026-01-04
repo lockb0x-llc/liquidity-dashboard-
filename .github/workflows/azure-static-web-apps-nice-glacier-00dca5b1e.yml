@@ -1,14 +1,13 @@
-# name: Azure Static Web Apps CI/CD
-# 
-# on:
-#   push:
-#     branches:
-#       - restore-fetch
-#   pull_request:
-#     types: [opened, synchronize, reopened, closed]
-#     branches:
-#       - restore-fetch
-on: [] # Disabled to prevent GitHub from deploying. Streamlit deployment will happen via Streamlit Cloud.
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    branches:
+      - restore-fetch
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - restore-fetch
 
 jobs:
   build_and_deploy_job:

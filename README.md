@@ -4,7 +4,7 @@ A modular, real-time Python application designed to track and visualize systemic
 
 ## 🌟 Overview
 
-The dashboard is built using **Streamlit** and follow a modular architecture where each financial indicator is a independent UI component. It integrates directly with public data sources from the New York Fed and the U.S. Treasury.
+The dashboard is built using **Streamlit** and follows a modular architecture where each financial indicator is an independent UI component. It integrates directly with public data sources from the New York Fed and the U.S. Treasury.
 
 ### Featured Indicators:
 - **ON RRP (Overnight Reverse Repo)**: Daily usage of the Fed's cash-drain facility.
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-## �️ Architecture
+## 🏗️ Architecture
 
 The project is organized for modularity and maintainability:
 
@@ -52,17 +52,23 @@ liquidity-dashboard/
 │       ├── sofr_panel.py
 │       ├── srf_panel.py
 │       ├── reserves_panel.py
-│       └── utils.py       # UI consistency helpers (Glassmorphism, Metrics)
-├── data/                  # Local CSV cache for historical analysis
+│       └── utils.py       # UI consistency helpers
+├── data/                  # Local CSV cache
 └── docs/                  # Technical documentation
 ```
 
-## 📈 Key Functionality
+## ☁️ Deployment
 
-- **Modular Panels**: Each indicator has its own self-contained logic for fetching data and rendering charts.
-- **Stress Alerts**: Visual indicators for when metrics exceed historical stress thresholds (e.g., ON RRP > $2T, Low Reserves).
-- **Interactive Charts**: Responsive Plotly visualizations for trend analysis.
-- **Live Data**: Fetches the latest available results from the NY Fed Markets API and Treasury Fiscal Data service.
+### Azure App Service (Recommended)
+This application is best hosted as an **Azure App Service (Linux Web App)** with Python 3.11+.
+
+1. **Create Resource**: Create a Web App in Azure Portal.
+2. **Setup CI/CD**: Connect GitHub and use the generated workflow.
+3. **Startup Command**: Set the startup command to:
+   `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
+
+### Azure Static Web Apps
+If you prefer **Azure Static Web Apps**, ensure you are using a static site generator like **Stlite** to bundle the Python environment into WebAssembly.
 
 ## ⚙️ Configuration
 
@@ -70,7 +76,7 @@ Alert thresholds and API endpoints can be modified in `src/config.py`:
 - `THRESHOLDS`: Configure levels for stress detection.
 - `DATA_SOURCES`: API endpoints for the Federal Reserve and Treasury.
 
-## � Data Sources
+## 📚 Data Sources
 - [NY Fed Markets Data API](https://markets.newyorkfed.org/api/)
 - [U.S. Treasury Fiscal Data](https://api.fiscaldata.treasury.gov/)
 - [Federal Reserve H.4.1 Release](https://www.federalreserve.gov/releases/h41/)
@@ -80,5 +86,3 @@ Alert thresholds and API endpoints can be modified in `src/config.py`:
 ![Screenshot](docs/Screenshot_2-1-2026_175926_localhost.png)
 
 *Built for macro analysts and financial engineers seeking transparency in systemic liquidity.*
-
-

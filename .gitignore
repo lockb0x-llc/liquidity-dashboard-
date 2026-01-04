@@ -205,3 +205,21 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Dashboard Specific
+data/*.csv
+!data/visualization_fields.csv
+plots/
+.streamlit/
+.mcp.json
+*.png
+*.jpg
+*.jpeg
+*.webp
+!docs/*.png
+!docs/*.jpg
+!docs/*.jpeg
+!docs/*.webp
+.DS_Store
+*.log
+artifacts/
