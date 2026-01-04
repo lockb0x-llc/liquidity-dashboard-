@@ -72,9 +72,6 @@ This application is best hosted as an **Azure App Service (Linux Web App)** with
    `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
 
 
-### Azure Static Web Apps
-If you prefer **Azure Static Web Apps**, ensure you are using a static site generator like **Stlite** to bundle the Python environment into WebAssembly.
-
 ## ⚙️ Configuration
 
 Alert thresholds and API endpoints can be modified in `src/config.py`:

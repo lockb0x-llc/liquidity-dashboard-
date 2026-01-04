@@ -53,12 +53,8 @@ Since Streamlit is a server-side Python application, **Azure App Service** is th
 4. **CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` handles the build and deployment using the stored credentials.
 
 
-### Azure Static Web Apps
-Azure Static Web Apps is primarily for static content and serverless APIs. To run Streamlit here:
-- You must use **Stlite** (Streamlit in the browser via WebAssembly).
-- Alternatively, host the Streamlit app on App Service and use Static Web Apps only for static documentation or landing pages.
-
 ---
+
 
 ## 🛠️ Extending the Dashboard
 

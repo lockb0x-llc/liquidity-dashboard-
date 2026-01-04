@@ -1,13 +1,15 @@
 name: Deploy Streamlit to Azure App Service
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - restore-fetch
+      - main
   workflow_dispatch:
 
 jobs:
   build:
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
