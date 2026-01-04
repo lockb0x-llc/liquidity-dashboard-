@@ -19,7 +19,7 @@ The dashboard is built using **Streamlit** and follows a modular architecture wh
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd liquidity-dashboard-
+cd liquidity-dashboard
 
 # Set up virtual environment
 python -m venv venv
