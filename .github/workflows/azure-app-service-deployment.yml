@@ -38,5 +38,6 @@ jobs:
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'liquidity-dashboard' # Ensure this matches your Azure App Service name
+          app-name: 'liquidity-dashboard-ebfqevdbhec9hxfs' # Verified from Azure Portal default domain
+          startup-command: 'streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0'
           package: '.'
