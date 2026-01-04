@@ -28,8 +28,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'liquidity-dashboard' # Update this with your actual app name
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          app-name: 'liquidity-dashboard' # Ensure this matches your Azure App Service name
+          package: '.'
+

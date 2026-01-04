@@ -62,10 +62,15 @@ liquidity-dashboard/
 ### Azure App Service (Recommended)
 This application is best hosted as an **Azure App Service (Linux Web App)** with Python 3.11+.
 
-1. **Create Resource**: Create a Web App in Azure Portal.
-2. **Setup CI/CD**: Connect GitHub and use the generated workflow.
-3. **Startup Command**: Set the startup command to:
+1. **Create Resource**: Create a Web App (Python) in the Azure Portal.
+2. **Setup Credentials**: 
+   - Generate a Service Principal using Azure CLI:
+     `az ad sp create-for-rbac --name "myApp" --role contributor --scopes /subscriptions/<sub-id>/resourceGroups/<rg-name> --sdk-auth`
+   - Add the resulting JSON to GitHub Secrets as `AZURE_CREDENTIALS`.
+3. **Setup CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` will now use these credentials.
+4. **Startup Command**: In Azure Portal, set the startup command to:
    `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
+
 
 ### Azure Static Web Apps
 If you prefer **Azure Static Web Apps**, ensure you are using a static site generator like **Stlite** to bundle the Python environment into WebAssembly.

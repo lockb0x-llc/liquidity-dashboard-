@@ -45,10 +45,13 @@ streamlit run streamlit_app.py
 Since Streamlit is a server-side Python application, **Azure App Service** is the preferred hosting platform.
 
 1. **Create Web App**: In the Azure Portal, create a "Web App" with the **Python** runtime.
-2. **Configuration**: 
+2. **Setup Credentials**: 
+   - Generate a Service Principal: `az ad sp create-for-rbac --sdk-auth`
+   - Save the JSON output as a GitHub Secret named `AZURE_CREDENTIALS`.
+3. **Configuration**: 
    - Set the startup command to: `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
-   - Ensure the port matches the one configured in Azure (usually 8000).
-3. **CI/CD**: Use the GitHub Actions provided by Azure to automate deployment on push.
+4. **CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` handles the build and deployment using the stored credentials.
+
 
 ### Azure Static Web Apps
 Azure Static Web Apps is primarily for static content and serverless APIs. To run Streamlit here:
