@@ -38,5 +38,5 @@ jobs:
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'liquidity-dashboard-' # Ensure this matches your Azure App Service name
+          app-name: 'liquidity-dashboard' # Ensure this matches your Azure App Service name
           package: '.'
