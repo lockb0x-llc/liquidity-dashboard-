@@ -1,90 +1,116 @@
-# 🏦 US Liquidity Dashboard
 
-A modular, real-time Python application designed to track and visualize systemic liquidity stress indicators in the U.S. financial system. This dashboard monitors key Federal Reserve facilities and market rates to provide forensic visibility into liquidity conditions.
+## Liquidity Dashboard
 
-## 🌟 Overview
-
-The dashboard is built using **Streamlit** and follows a modular architecture where each financial indicator is an independent UI component. It integrates directly with public data sources from the New York Fed and the U.S. Treasury.
-
-### Featured Indicators:
-- **ON RRP (Overnight Reverse Repo)**: Daily usage of the Fed's cash-drain facility.
-- **Bank Reserves**: Total reserve balances from the Fed H.4.1 release.
-- **SOFR (Secured Overnight Financing Rate)**: Reference rate volatility and volume.
-- **SRF (Standing Repo Facility)**: Detection of emergency liquidity backstop usage.
-- **Treasury Issuance**: Weekly auction volumes and yield trends.
-
-## 🚀 Quick Start
-
-### 1. Installation
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd liquidity-dashboard
-
-# Set up virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Launch Dashboard
-```bash
-streamlit run streamlit_app.py
-```
-
-## 🏗️ Architecture
-
-The project is organized for modularity and maintainability:
-
-```
-liquidity-dashboard/
-├── streamlit_app.py       # Main dashboard entry point
-├── requirements.txt       # Project dependencies
-├── src/
-│   ├── fetch_*.py         # Robust data fetchers for each indicator
-│   ├── config.py          # Centralized API endpoints and thresholds
-│   ├── utils.py           # Shared data processing utilities
-│   └── components/        # Modular UI panels
-│       ├── onrrp_panel.py
-│       ├── treasury_panel.py
-│       ├── sofr_panel.py
-│       ├── srf_panel.py
-│       ├── reserves_panel.py
-│       └── utils.py       # UI consistency helpers
-├── data/                  # Local CSV cache
-└── docs/                  # Technical documentation
-```
-
-## ☁️ Deployment
-
-### Azure App Service (Recommended)
-This application is best hosted as an **Azure App Service (Linux Web App)** with Python 3.11+.
-
-1. **Create Resource**: Create a Web App (Python) in the Azure Portal.
-2. **Setup Credentials**: 
-   - Generate a Service Principal using Azure CLI:
-     `az ad sp create-for-rbac --name "myApp" --role contributor --scopes /subscriptions/<sub-id>/resourceGroups/<rg-name> --sdk-auth`
-   - Add the resulting JSON to GitHub Secrets as `AZURE_CREDENTIALS`.
-3. **Setup CI/CD**: The workflow in `.github/workflows/azure-app-service-deployment.yml` will now use these credentials.
-4. **Startup Command**: In Azure Portal, set the startup command to:
-   `streamlit run streamlit_app.py --server.port 8000 --server.address 0.0.0.0`
-
-
-## ⚙️ Configuration
-
-Alert thresholds and API endpoints can be modified in `src/config.py`:
-- `THRESHOLDS`: Configure levels for stress detection.
-- `DATA_SOURCES`: API endpoints for the Federal Reserve and Treasury.
-
-## 📚 Data Sources
-- [NY Fed Markets Data API](https://markets.newyorkfed.org/api/)
-- [U.S. Treasury Fiscal Data](https://api.fiscaldata.treasury.gov/)
-- [Federal Reserve H.4.1 Release](https://www.federalreserve.gov/releases/h41/)
+An interactive dashboard for visualizing and analyzing liquidity data from multiple sources, built with Streamlit and containerized for easy deployment.
 
 ---
 
-![Screenshot](docs/Screenshot_2-1-2026_175926_localhost.png)
+### Project Structure
 
-*Built for macro analysts and financial engineers seeking transparency in systemic liquidity.*
+```
+├── Dockerfile                # Container build instructions
+├── requirements.txt          # Python dependencies
+├── streamlit_app.py          # Main Streamlit app entry point
+├── src/                      # Source code (data fetchers, UI components, config)
+├── data/                     # Static data files
+├── plots/                    # Generated plots
+├── docs/                     # Documentation
+```
+
+---
+
+## Quick Start (Docker)
+
+### Prerequisites
+- [Docker](https://www.docker.com/get-started) installed
+
+### Build the Docker image
+```sh
+docker build -t liquidity-dashboard .
+```
+
+### Run the app
+```sh
+docker run -p 8501:8501 liquidity-dashboard
+```
+Then open [http://localhost:8501](http://localhost:8501) in your browser.
+
+---
+
+## Local Development (Optional)
+
+If you prefer to run locally (without Docker):
+
+1. Create a virtual environment and activate it:
+   ```sh
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+2. Install dependencies:
+   ```sh
+   pip install -r requirements.txt
+   ```
+3. Run the app:
+   ```sh
+   streamlit run streamlit_app.py
+   ```
+
+---
+
+## Configuration
+
+- App configuration is managed in `src/config.py` and `src/common/config.py`.
+- Data sources and update logic are in `src/fetch_*.py` and `src/components/`.
+
+---
+
+## Data Sources
+
+- See `docs/DATA-SOURCES.md` for details on data origins and update instructions.
+- Static data is in `data/`.
+
+---
+
+## Distribution & Deployment
+
+1. **Build the Docker image** as above.
+2. **Test locally** to ensure the app runs as expected.
+3. **Push to a container registry** (e.g., Docker Hub, GitHub Container Registry, Azure Container Registry):
+   ```sh
+   docker tag liquidity-dashboard yourrepo/liquidity-dashboard:latest
+   docker push yourrepo/liquidity-dashboard:latest
+   ```
+4. **Deploy** using your preferred container orchestration (Kubernetes, Azure Web Apps, etc.).
+
+---
+
+## .dockerignore (Recommended)
+
+Create a `.dockerignore` file to exclude unnecessary files from the image:
+```
+__pycache__/
+*.pyc
+.git/
+docs/
+plots/
+venv/
+```
+
+---
+
+## Troubleshooting
+
+- If you see file permission errors, ensure the container user has access to `data/` and `plots/`.
+- For networking issues, confirm port 8501 is open and not in use.
+
+---
+
+## Contributing
+
+Pull requests are welcome! Please see `docs/AGENTS.md` for agent-related contributions and `docs/REQUIREMENTS_REPORT.md` for dependency details.
+
+---
+
+## License
+
+MIT License (see LICENSE file).

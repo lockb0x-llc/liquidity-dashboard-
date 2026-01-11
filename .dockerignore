@@ -1,12 +1,36 @@
 
+
+# Ignore version control and CI/CD
 .git
 .github
-venv
-__pycache__
+
+# Ignore Python cache and virtual environments
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
+venv/
+*.egg-info/
+
+# Ignore system and editor files
 .DS_Store
-.env
+.idea/
+.vscode/
+*.swp
+*.bak
+
+# Ignore build, test, and coverage outputs
+dist/
+build/
 .coverage
-htmlcov
-dist
-build
+htmlcov/
+*.log
+
+# Ignore documentation and generated plots
+docs/
+plots/
+
+# Ignore environment and database files
+.env
+*.db
+*.sqlite3
