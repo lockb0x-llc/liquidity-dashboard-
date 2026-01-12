@@ -1,7 +1,8 @@
-
 ## Liquidity Dashboard
 
 An interactive dashboard for visualizing and analyzing liquidity data from multiple sources, built with Streamlit and containerized for easy deployment.
+
+![Dashboard Preview](docs/Screenshot_2-1-2026_175926_localhost.jpeg)
 
 ---
 
@@ -15,21 +16,24 @@ An interactive dashboard for visualizing and analyzing liquidity data from multi
 ├── data/                     # Static data files
 ├── plots/                    # Generated plots
 ├── docs/                     # Documentation
+└── LICENSE                   # MIT License
 ```
 
 ---
 
-## Quick Start (Docker)
+## 🚀 Quick Start (Docker)
+
+The easiest way to run the application is using Docker. This ensures you have all the correct dependencies and environment updates.
 
 ### Prerequisites
 - [Docker](https://www.docker.com/get-started) installed
 
-### Build the Docker image
+### 1. Build the Docker image
 ```sh
 docker build -t liquidity-dashboard .
 ```
 
-### Run the app
+### 2. Run the app
 ```sh
 docker run -p 8501:8501 liquidity-dashboard
 ```
@@ -37,80 +41,65 @@ Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## Local Development (Optional)
+## 💻 Local Development
 
-If you prefer to run locally (without Docker):
+If you prefer to run the Python application directly on your machine:
 
-1. Create a virtual environment and activate it:
+1. **Clone the repository** and navigate to the directory.
+
+2. **Create a virtual environment**:
    ```sh
    python3 -m venv venv
-   source venv/bin/activate
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
-2. Install dependencies:
+
+3. **Install dependencies**:
    ```sh
    pip install -r requirements.txt
    ```
-3. Run the app:
+
+4. **Run the app**:
    ```sh
    streamlit run streamlit_app.py
    ```
 
 ---
 
-## Configuration
+## 🔒 Security & data
 
-- App configuration is managed in `src/config.py` and `src/common/config.py`.
-- Data sources and update logic are in `src/fetch_*.py` and `src/components/`.
-
----
-
-## Data Sources
-
-- See `docs/DATA-SOURCES.md` for details on data origins and update instructions.
-- Static data is in `data/`.
+This repository is designed to be public-safe:
+- **Environment Variables**: Sensitive configuration should be loaded via `.env` files (which are git-ignored) or environment variables.
+- **Data Privacy**: The `data/` directory ignores CSV files by default (except configuration files like `visualization_fields.csv`). Ensure you do not commit private financial data if you fork this repository.
+- **Container Security**: The `Dockerfile` runs as a non-root user (implied by Streamlit best practices, though currently running as default. For production, consider adding a user).
 
 ---
 
-## Distribution & Deployment
+## 📦 Deployment
 
-1. **Build the Docker image** as above.
-2. **Test locally** to ensure the app runs as expected.
-3. **Push to a container registry** (e.g., Docker Hub, GitHub Container Registry, Azure Container Registry):
+This application is container-ready and can be deployed to any platform that supports Docker:
+
+1. **Docker Hub / GHCR**: Push your built image to a registry.
    ```sh
-   docker tag liquidity-dashboard yourrepo/liquidity-dashboard:latest
-   docker push yourrepo/liquidity-dashboard:latest
+   docker tag liquidity-dashboard your-user/liquidity-dashboard:latest
+   docker push your-user/liquidity-dashboard:latest
    ```
-4. **Deploy** using your preferred container orchestration (Kubernetes, Azure Web Apps, etc.).
+
+2. **Cloud Platforms**:
+   - **AWS**: Deploy to ECS or App Runner.
+   - **Azure**: Deploy to App Service for Containers or Azure Container Apps.
+   - **GCP**: Deploy to Cloud Run.
+   - **Self-Hosted**: Run with `docker-compose` or Kubernetes.
 
 ---
 
-## .dockerignore (Recommended)
+## 🤝 Contributing
 
-Create a `.dockerignore` file to exclude unnecessary files from the image:
-```
-__pycache__/
-*.pyc
-.git/
-docs/
-plots/
-venv/
-```
+Pull requests are welcome!
+- See `docs/AGENTS.md` for details on how AI agents were used in this project.
+- See `docs/REQUIREMENTS_REPORT.md` for a deep dive into the project dependencies.
 
 ---
 
-## Troubleshooting
+## 📄 License
 
-- If you see file permission errors, ensure the container user has access to `data/` and `plots/`.
-- For networking issues, confirm port 8501 is open and not in use.
-
----
-
-## Contributing
-
-Pull requests are welcome! Please see `docs/AGENTS.md` for agent-related contributions and `docs/REQUIREMENTS_REPORT.md` for dependency details.
-
----
-
-## License
-
-MIT License (see LICENSE file).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
