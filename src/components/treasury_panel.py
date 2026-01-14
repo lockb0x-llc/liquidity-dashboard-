@@ -1,8 +1,6 @@
-
 import streamlit as st
 import plotly.express as px
-from datetime import datetime, timedelta
-from src.fetch_treasury import TreasuryFetcher
+from src.api_client import LiquidityAPIClient
 from src.components.utils import make_panel_header, render_metric_card, make_chart_container
 
 def render_treasury_panel():
@@ -13,10 +11,8 @@ def render_treasury_panel():
 
     # Fetch data
     try:
-        fetcher = TreasuryFetcher()
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=90)
-        df = fetcher.fetch_data(start_date=start_date, end_date=end_date)
+        client = LiquidityAPIClient()
+        df = client.get_treasury(days=90)
     except Exception as e:
         st.error(f"Failed to fetch Treasury data: {e}")
         return

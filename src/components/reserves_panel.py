@@ -1,8 +1,6 @@
-
 import streamlit as st
 import plotly.express as px
-from datetime import datetime, timedelta
-from src.fetch_reserves import ReservesFetcher
+from src.api_client import LiquidityAPIClient
 from src.components.utils import make_panel_header, render_metric_card, make_chart_container
 
 def render_reserves_panel():
@@ -13,11 +11,9 @@ def render_reserves_panel():
 
     # Fetch data
     try:
-        fetcher = ReservesFetcher()
-        # Fetch 1 year of data
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
-        df = fetcher.fetch_data(start_date=start_date, end_date=end_date)
+        client = LiquidityAPIClient()
+        # Fetch 90 days of data
+        df = client.get_reserves(days=90)
     except Exception as e:
         st.error(f"Failed to fetch Reserves data: {e}")
         return

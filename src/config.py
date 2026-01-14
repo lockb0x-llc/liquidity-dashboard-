@@ -66,3 +66,10 @@ PLOT_CONFIG = {
 # Logging configuration
 LOG_LEVEL = 'INFO'
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# API Configuration
+# In production, these should be set via environment variables.
+API_HOST = os.getenv("API_HOST", "0.0.0.0")
+API_PORT = int(os.getenv("API_PORT", "8000"))
+API_URL = os.getenv("API_URL", f"http://localhost:{API_PORT}")
+API_KEY = os.getenv("API_KEY", "community-key-123")  # Default key for dashboard

@@ -1,7 +1,6 @@
-
 import streamlit as st
 import plotly.express as px
-from src.fetch_onrrp import ONRRPFetcher
+from src.api_client import LiquidityAPIClient
 from src.components.utils import make_panel_header, render_metric_card, make_chart_container
 
 def render_onrrp_panel():
@@ -12,9 +11,8 @@ def render_onrrp_panel():
 
     # Fetch data
     try:
-        fetcher = ONRRPFetcher()
-        # Fetching last 30 days for chart context
-        df = fetcher.fetch_data(mode="last_n", last_n=30) 
+        client = LiquidityAPIClient()
+        df = client.get_onrrp(last_n=30)
     except Exception as e:
         st.error(f"Failed to fetch ON RRP data: {e}")
         return

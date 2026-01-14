@@ -9,10 +9,16 @@ An interactive dashboard for visualizing and analyzing liquidity data from multi
 ### Project Structure
 
 ```
+├── api/                      # FastAPI Service (Decoupled data layer)
+│   ├── main.py               # API entry point
+│   ├── routers/              # Data-specific API routes
+│   └── dependencies.py       # Auth and Caching logic
 ├── Dockerfile                # Container build instructions
+├── docker-compose.yml        # Multi-service orchestration (API + UI + Redis)
+├── start.sh                  # Script to run both services in one container
 ├── requirements.txt          # Python dependencies
 ├── streamlit_app.py          # Main Streamlit app entry point
-├── src/                      # Source code (data fetchers, UI components, config)
+├── src/                      # Source code (API client, UI components, config)
 ├── data/                     # Static data files
 ├── plots/                    # Generated plots
 ├── docs/                     # Documentation
@@ -28,16 +34,22 @@ The easiest way to run the application is using Docker. This ensures you have al
 ### Prerequisites
 - [Docker](https://www.docker.com/get-started) installed
 
-### 1. Build the Docker image
+### 1. Run with Docker Compose (Recommended)
+```sh
+docker-compose up --build
+```
+This starts:
+- **FastAPI Service**: http://localhost:8000
+- **Streamlit Dashboard**: http://localhost:8501
+- **Redis Cache**: Port 6379
+
+### 2. Manual Build & Run
 ```sh
 docker build -t liquidity-dashboard .
+docker run -p 8501:8501 -p 8000:8000 liquidity-dashboard
 ```
+Then open [http://localhost:8501](http://localhost:8501) for the dashboard and [http://localhost:8000/docs](http://localhost:8000/docs) for the API documentation.
 
-### 2. Run the app
-```sh
-docker run -p 8501:8501 liquidity-dashboard
-```
-Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 

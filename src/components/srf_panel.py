@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
-from src.fetch_srf import SRFFetcher
+from src.api_client import LiquidityAPIClient
 from src.components.utils import make_panel_header, render_metric_card, make_chart_container
 
 def render_srf_panel():
@@ -13,10 +12,8 @@ def render_srf_panel():
 
     # Fetch data
     try:
-        fetcher = SRFFetcher()
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=30)
-        df = fetcher.fetch_data(start_date=start_date, end_date=end_date)
+        client = LiquidityAPIClient()
+        df = client.get_srf(days=30)
     except Exception as e:
         st.error(f"Failed to fetch SRF data: {e}")
         return
